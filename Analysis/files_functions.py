@@ -1,3 +1,11 @@
+'''
+#       This file stores functions related to ROOT file IO:
+             * reading from root file
+
+#
+#
+'''
+
 import calculation_functions
 import matplotlib.pyplot as plt
 import awkward as ak
@@ -11,10 +19,13 @@ import calculation_functions
 import files_functions 
 import plot_function
 
+'''
 signal_files = {     #times 1000 to convert from pb to fb
             "DMsimpl_spin0_Y0gg1_DeltaEta2.root": 1.64749 * 1000,
             
             }
+
+'''
 
 def openTree(tree_filepath):
 
@@ -28,8 +39,6 @@ def openTree(tree_filepath):
     - Jet.Eta
     - Jet.Mass
     ''' 
-    #Open tree and only keep stuff that we need
-    
     file = uproot.open(tree_filepath)
     tree = file[tree_name]
 
