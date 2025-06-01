@@ -1,4 +1,9 @@
-
+'''
+#       This file stores functions for making different plots
+          
+#
+#
+'''
 
 
 import matplotlib.pyplot as plt
@@ -11,10 +16,24 @@ import os
 import calculation_functions
 import files_functions 
 import plot_function
-from setup_variables import binning,  signal_dir, current_dir ,background_folders ,signal_files
 
 
+# Variables
+# Variables for current analysis context 
+from setup_variables import binning,  current_dir , signal_dir, signal_files ,background_dir, background_folders
+
+# Plot the "dataname" graph for J0, J1
 def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list):
+    '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
+
+        Extraction of data is handled by getJetsData 
+
+        For example, PlotJets(dataname = "PT") will plot the "JT" plot for J0, J1
+
+    '''
+
+    #TODO remove binname as its the same as dataname
+
     j0_hist_background = Hist(
             axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
         )
@@ -108,7 +127,17 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
     return numSigEvents, numBkgEvents
 
 
-def PlotMET(masklist, signal_weight_list,background_weight_list,signal_dir=signal_dir,signal_files=signal_files, background_folders=background_folders):
+# Plot Missing Energy
+def PlotMET(masklist, signal_weight_list,background_weight_list,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
+    
+    '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
+
+        Extraction of ddata is handled by this method
+
+        For example, PlotJets(dataname = "PT") will plot the "JT" plot for J0, J1
+
+    '''
+
     met_hist_background = Hist(
         axis.Regular(binning["Transverse"]["bins"], *binning["Transverse"]["range"], name="MET", label="MET")
     )
@@ -117,11 +146,10 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_dir=signa
     )
 
     #Signal Data
-
-    counter = 0 #which weight we use 
-    for signal_file in sorted(os.listdir(signal_dir)):
+    signalWeightIndex = 0 #which weight we use 
+    for signal_file in sorted(os.listdir(signal_directory)):
         if signal_file.endswith(".root"):
-            file_path = os.path.join(signal_dir, signal_file)
+            file_path = os.path.join(signal_directory, signal_file)
             
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
@@ -134,20 +162,18 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_dir=signa
                 signal_met = signal_df["MissingET.MET"].values
                 signal_met = ak.flatten(signal_met).to_numpy()
     
-                met_hist_signal.fill(MET=signal_met,weight = signal_weight_list[counter])
-                counter += 1
+                met_hist_signal.fill(MET=signal_met,weight = signal_weight_list[signalWeightIndex])
+                signalWeightIndex += 1
 
-    print(background_folders)
 
-    #Background
-    counter = 0
-    print(os.listdir(current_dir))
-    for folder_name in os.listdir(current_dir):
-        folder_path = os.path.join(current_dir, folder_name)
+    #Background Data
+    bkgWeightIndex = 0
+
+    for folder_name in os.listdir(background_directory):
+        folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
-            
             
             for root_file in os.listdir(folder_path):
                 if root_file.endswith(".root"):
@@ -160,8 +186,8 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_dir=signa
                     background_met = background_df["MissingET.MET"].values
                     background_met = ak.flatten(background_met).to_numpy()
                    
-                    met_hist_background.fill(MET=background_met,weight =background_weight_list[counter])
-                    counter+=1
+                    met_hist_background.fill(MET=background_met,weight =background_weight_list[bkgWeightIndex])
+                    bkgWeightIndex+=1
                 
                     
 
@@ -211,6 +237,9 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_dir=signa
 
     return numSigEvents, numBkgEvents
 
+##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
+
+# Plot Phi(Met)
 def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
 
     met_phi_hist_background = Hist(

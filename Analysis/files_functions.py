@@ -1,7 +1,7 @@
 '''
 #       This file stores functions related to ROOT file IO:
-             * reading from root file
-
+             * getting weights from root file
+             * reading data from root file
 #
 #
 '''
@@ -12,21 +12,27 @@ import awkward as ak
 import pandas as pd
 import numpy as np
 import uproot
-from setup_variables import luminescence,tree_name, binning,  signal_files, signal_dir, current_dir, background_folders
-from hist import Hist, axis
 import os
+from hist import Hist, axis
+
+#Our library files
 import calculation_functions
-import files_functions 
 import plot_function
 
-'''
-signal_files = {     #times 1000 to convert from pb to fb
-            "DMsimpl_spin0_Y0gg1_DeltaEta2.root": 1.64749 * 1000,
-            
-            }
 
-'''
+## Variables
+#  Variables for current analysis context
+from setup_variables import luminescence,tree_name, binning,  signal_files, signal_dir, current_dir, background_folders
 
+
+
+#############################  FUNCTIONS  ##########################################3
+
+
+# # # # # # # Gathering Data Functions # # # # # 
+
+
+#Get tree from root file
 def openTree(tree_filepath):
 
     ''' This function opens a ROOT file and extracts the relevant branches from the Delphes tree.
@@ -55,18 +61,72 @@ def openTree(tree_filepath):
 
     return df
 
-def applySingleCut(df, mask_function):
-    mask = mask_function(df)
-    return df[mask]
 
-def applyMultipleCuts(df, mask_functions):
+
+# Get Weights from every file in given folder"
+def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files,luminescence=luminescence):
+    '''
+    Get weights from every root file at directory
+    For each file, the weight is calculated using luminescence and the corresponding effective area defined
+    in the dictionary 'file_effectivearea_dir
+    '''
+    signal_weight_list = []
+
+    # Iterate over each signal file
+    for signal_file in sorted(os.listdir(directory)):  #sorted so that it's the same order each time
+        
+        if signal_file.endswith(".root"):
+            file_path = os.path.join(directory, signal_file)
+            i=0
+            # print("step number",i)
+            i+=1
+            
+            # Check if the root file is in the signal_files dictionary
+            if signal_file in signal_files:
+                print(file_path)
+                signal_df = openTree(file_path)
+                signal_temp = signal_df["MissingET.MET"].values
+                #print(signal_df.head(3))
+
+                numSigEvents = len(signal_temp)
+                tempSigWeight = calculation_functions.calculateWeight(num_events=numSigEvents,effective_area= file_effectivearea_dir[signal_file],lumi=luminescence)
+                signal_weight_list.append(tempSigWeight)
     
-    for mask in mask_functions:
-        df = applySingleCut(df, mask)
 
-    return df
+    return signal_weight_list
+    
+# Get Weights from every file in given folders
+def get_background_weights(directory=background_dir, folder_effectivearea_dir=background_folders,luminescence=luminescence)):
+     '''
+    Get weights from every root file, in every background folder in "folder_effective_area", inside of directory
+    For each file, the weight is calculated using luminescence and the corresponding effective area defined
+    in the dictionary 'file_effectivearea_dir
+    '''
+    background_weight_list = []
 
-def get_weights(signal_dir,type_signal,signal_files=signal_files,background_folders=background_folders):
+    for folder_name in sorted(os.listdir(directory)):
+        folder_path = os.path.join(directory, folder_name)
+
+        # Check if the current item is a directory and if its name is in the background_folders dictionary
+        if os.path.isdir(folder_path) and (folder_name in folder_effectivearea_dir):
+            cross_section = folder_effectivearea_dir[folder_name]
+            
+            for root_file in os.listdir(folder_path):
+                if root_file.endswith(".root"):
+                    file_path = os.path.join(folder_path, root_file)
+                    background_df = openTree(file_path) 
+                    background_temp = background_df["MissingET.MET"].values #arbitraty branch 
+
+                    numBkgEvents = len(background_temp)
+                    tempBkgWeight = calculation_functions.calculateWeight(num_events=numBkgEvents, effective_area=cross_section, lumi=luminescence)
+
+                    background_weight_list.append(tempBkgWeight)
+                    
+    return background_weight_list
+
+
+# DEPRECATED
+def get_weights(signal_dir,type_signal,signal_files, background_folders):
 
     '''This function calculates the weights for signal and background events. 
     It takes the directory of the signal files and the type of signal (signal or background) as input.
@@ -85,9 +145,7 @@ def get_weights(signal_dir,type_signal,signal_files=signal_files,background_fold
     '''
 
     if type_signal=="signal":
-        #print("first step")
         signal_weight_list = []
-        #print(sorted(os.listdir(signal_dir)))
 
         # Iterate over each signal file
         for signal_file in sorted(os.listdir(signal_dir)):  #sorted so that it's the same order each time
@@ -108,55 +166,47 @@ def get_weights(signal_dir,type_signal,signal_files=signal_files,background_fold
                     numSigEvents = len(signal_temp)
                     tempSigWeight = calculation_functions.calculateWeight(num_events=numSigEvents,effective_area= signal_files[signal_file],lumi=luminescence)
                     signal_weight_list.append(tempSigWeight)
-                    #print(signal_weight_list,"hola")
-                    #return signal_weight_list
-                else:
-                    print(f"{signal_files}")
-                    print(f"Warning: {signal_file} not found in signal_files dictionary.")
+        
+
         return signal_weight_list
             
 
     elif type_signal=="background":
-        #print("bkgprocess")
-        #print(sorted(os.listdir(signal_dir)))
         background_weight_list = []
+        print("signal dir: ", signal_dir)
         for folder_name in sorted(os.listdir(signal_dir)):
-                folder_path = os.path.join(signal_dir, folder_name)
-                #print("bkg 2 step")
-                # Check if the current item is a directory and if its name is in the background_folders dictionary
+            print("curr folder name:" , folder_name)
+            folder_path = os.path.join(signal_dir, folder_name)
+        
+            # Check if the current item is a directory and if its name is in the background_folders dictionary
+            
+            if os.path.isdir(folder_path) and (folder_name in background_folders):
+                cross_section = background_folders[folder_name]
                 
-                if os.path.isdir(folder_path) and (folder_name in background_folders):
-                    cross_section = background_folders[folder_name]
-                    
-                    for root_file in os.listdir(folder_path):
-                        if root_file.endswith(".root"):
-                            file_path = os.path.join(folder_path, root_file)
-                            background_df = openTree(file_path) 
-                            background_temp = background_df["MissingET.MET"].values #arbitraty branch 
+                for root_file in os.listdir(folder_path):
+                    if root_file.endswith(".root"):
+                        file_path = os.path.join(folder_path, root_file)
+                        background_df = openTree(file_path) 
+                        background_temp = background_df["MissingET.MET"].values #arbitraty branch 
 
-                            numBkgEvents = len(background_temp)
-                            tempBkgWeight = calculation_functions.calculateWeight(num_events=numBkgEvents, effective_area=cross_section, lumi=luminescence)
+                        numBkgEvents = len(background_temp)
+                        tempBkgWeight = calculation_functions.calculateWeight(num_events=numBkgEvents, effective_area=cross_section, lumi=luminescence)
 
-                            background_weight_list.append(tempBkgWeight)
-                            
-
-                else:
-                    print(background_folders)
-                    print(f"Warning: {folder_name} not found in background_files dictionary.")
+                        background_weight_list.append(tempBkgWeight)
+                        
         return background_weight_list
 
 
-def getJetsData(dataname, masklist): 
+def getJetsData(dataname, masklist,signal_directory=signal_dir,background_directory=background_dir,background_folders=background_folders): 
     #used when we are working with J0,J1 stuff (which is often)
-
 
     #Signal Processing
     signal_j0_list = []
     signal_j1_list = []
 
-    for signal_file in sorted(os.listdir(signal_dir)):
+    for signal_file in sorted(os.listdir(signal_directory)):
         if signal_file.endswith(".root"):
-            file_path = os.path.join(signal_dir, signal_file)
+            file_path = os.path.join(signal_directory, signal_file)
             
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
@@ -183,8 +233,8 @@ def getJetsData(dataname, masklist):
     background_j0_list = []
     background_j1_list = []
 
-    for folder_name in sorted(os.listdir(current_dir)):
-        folder_path = os.path.join(current_dir, folder_name)
+    for folder_name in sorted(os.listdir(background_directory)):
+        folder_path = os.path.join(background_directory, folder_name)
 
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
@@ -213,7 +263,29 @@ def getJetsData(dataname, masklist):
     return signal_j0_list, signal_j1_list, background_j0_list, background_j1_list
         
 
+# # # # # # # End of Gathering Data Functions # # # # # #
+
+
+#TODO move functions below to more appropriate files
+
+
+def applySingleCut(df, mask_function):
+    mask = mask_function(df)
+    return df[mask]
+
+def applyMultipleCuts(df, mask_functions):
+    
+    for mask in mask_functions:
+        df = applySingleCut(df, mask)
+
+    return df
+
+
+
 def GetSignificances(sighist,bkghist):
+    '''Calculate and return an array of significances from a given
+        signal data histogram, and background data histogram.
+    '''
     signal_counts = sighist.values()
     bkg_counts = bkghist.values()
 
