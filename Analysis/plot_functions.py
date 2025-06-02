@@ -34,6 +34,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
     #TODO remove binname as its the same as dataname
 
+
     j0_hist_background = Hist(
             axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
         )
@@ -58,32 +59,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
     for i in range(len(bkgj0list)):
         j0_hist_background.fill(thedata=bkgj0list[i], weight=background_weight_list[i])
-        j1_hist_background.fill(thedata=bkgj1list[i], weight=background_weight_list[i])
-    
-
-    # Create a figure and a set of subplots (2 columns, 1 row)
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-
-    # Plot J0
-    axs[0].stairs(
-        j0_hist_background.values(),
-        j0_hist_background.axes[0].edges,
-        color='blue',
-        label='Background',
-        linewidth=2
-    )
-    axs[0].stairs(
-        j0_hist_signal.values(),
-        j0_hist_signal.axes[0].edges,
-        color='red',
-        label='Signal',
-        linewidth=3
-    )
-    axs[0].set_xlabel(dataname+'(j0)')
-    axs[0].set_ylabel('Counts')
-    axs[0].set_yscale('log')
-    axs[0].set_title(dataname+'(j0) Distributions')
-    axs[0].legend()
+        j1_hist_backgruts_strings=['no cuts', 'Eta(j0) * Eta(j1) < 0', 'Pt(j0) > 30',  'Pt(j1) > 30', 'MET > 50']
     axs[0].grid(True)
 
     # Plot J1
@@ -759,7 +735,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
 def Get_Table(number_of_sig_events,number_of_bkg_events,significances,cuts):
     # Data for the table
     
-    data = [[i+1,cuts[i],number_of_sig_events[i],number_of_bkg_events[i],significances[i]] for i in range(len(cuts))]
+    data = [[i,cuts[i],number_of_sig_events[i],number_of_bkg_events[i],significances[i]] for i in range(len(cuts))]
 
     columns = ["","Cut","Signal Events", "Background Events", "Significance"]
 
