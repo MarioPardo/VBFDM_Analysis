@@ -17,12 +17,10 @@ from hist import Hist, axis
 
 #Our library files
 import calculation_functions
-import plot_function
-
 
 ## Variables
 #  Variables for current analysis context
-from setup_variables import luminescence,tree_name, binning,  signal_files, signal_dir, current_dir, background_folders
+from setup_variables import luminescence,tree_name, binning,  signal_files, signal_dir, current_dir, background_dir, background_folders
 
 
 
@@ -70,6 +68,7 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
     For each file, the weight is calculated using luminescence and the corresponding effective area defined
     in the dictionary 'file_effectivearea_dir
     '''
+
     signal_weight_list = []
 
     # Iterate over each signal file
@@ -96,12 +95,13 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
     return signal_weight_list
     
 # Get Weights from every file in given folders
-def get_background_weights(directory=background_dir, folder_effectivearea_dir=background_folders,luminescence=luminescence)):
-     '''
+def get_background_weights(directory=background_dir, folder_effectivearea_dir=background_folders,luminescence=luminescence):
+    '''
     Get weights from every root file, in every background folder in "folder_effective_area", inside of directory
     For each file, the weight is calculated using luminescence and the corresponding effective area defined
     in the dictionary 'file_effectivearea_dir
     '''
+
     background_weight_list = []
 
     for folder_name in sorted(os.listdir(directory)):
@@ -232,6 +232,7 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
     # Background processing
     background_j0_list = []
     background_j1_list = []
+
 
     for folder_name in sorted(os.listdir(background_directory)):
         folder_path = os.path.join(background_directory, folder_name)

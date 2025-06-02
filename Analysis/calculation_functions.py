@@ -5,8 +5,7 @@ import numpy as np
 import uproot
 from hist import Hist, axis
 import os
-import files_functions 
-import plot_function
+
 
 def calculateWeight(num_events, effective_area, lumi):
     return effective_area * lumi / num_events

@@ -15,7 +15,7 @@ from hist import Hist, axis
 import os
 import calculation_functions
 import files_functions 
-import plot_function
+
 
 
 # Variables
@@ -23,7 +23,7 @@ import plot_function
 from setup_variables import binning,  current_dir , signal_dir, signal_files ,background_dir, background_folders
 
 # Plot the "dataname" graph for J0, J1
-def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list):
+def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename):
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
         Extraction of data is handled by getJetsData 
@@ -56,7 +56,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         j1_hist_signal.fill(thedata=j1siglist[i], weight=signal_weight_list[i])
 
 
-    for i in range(len(background_weight_list)):
+    for i in range(len(bkgj0list)):
         j0_hist_background.fill(thedata=bkgj0list[i], weight=background_weight_list[i])
         j1_hist_background.fill(thedata=bkgj1list[i], weight=background_weight_list[i])
     
@@ -117,7 +117,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         number_of_cuts=str(len(masklist))
     
     # Show the plot
-    plt.savefig(f"{binname}_"+f"{dataname}"+f"{number_of_cuts}.png")
+    plt.savefig(savefilename+".png")
 
 
     #signal and background events to for the 'cut chart'
@@ -126,9 +126,107 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
     return numSigEvents, numBkgEvents
 
+# Plots a certain graph for a certain jet, J0 or J1
+def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename): 
+    '''
+    Plots a certain graph for J0, J1, depending on "kind", being either "j1" or "j0"
+
+    '''
+
+
+    # Create histograms for J0
+    j0_hist_background = Hist(
+        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
+    )
+    j0_hist_signal = Hist(
+        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
+    )
+
+    # Create histograms for J1
+    j1_hist_background = Hist(
+        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
+    )
+    j1_hist_signal = Hist(
+        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
+    )
+
+    # Retrieve data
+    j0siglist, j1siglist, bkgj0list, bkgj1list = files_functions.getJetsData(dataname, masklist)
+
+    # Fill histograms
+    for i in range(len(j0siglist)):
+        j0_hist_signal.fill(thedata=j0siglist[i], weight=signal_weight_list[i])
+        j1_hist_signal.fill(thedata=j1siglist[i], weight=signal_weight_list[i])
+
+    for i in range(len(background_weight_list)):
+        j0_hist_background.fill(thedata=bkgj0list[i], weight=background_weight_list[i])
+        j1_hist_background.fill(thedata=bkgj1list[i], weight=background_weight_list[i])
+
+    # Create a figure and a set of subplots based on the parameter
+    if kind=="j1":
+        # Plot J1 only
+        fig, axs = plt.subplots(1, 1, figsize=(8, 6))
+
+        axs.stairs(
+            j1_hist_background.values(),
+            j1_hist_background.axes[0].edges,
+            color='blue',
+            label='Background',
+            linewidth=2
+        )
+        axs.stairs(
+            j1_hist_signal.values(),
+            j1_hist_signal.axes[0].edges,
+            color='red',
+            label='Signal',
+            linewidth=3
+        )
+        axs.set_xlabel(dataname+'(j1)')
+        axs.set_ylabel('Counts')
+        axs.set_yscale('log')
+        axs.set_title(dataname+'(j1) Distributions')
+        axs.legend()
+        axs.grid(True)
+    elif kind=="j0":
+        # Plot J0 only
+        fig, axs = plt.subplots(1, 1, figsize=(8, 6))
+
+        axs.stairs(
+            j0_hist_background.values(),
+            j0_hist_background.axes[0].edges,
+            color='blue',
+            label='Background',
+            linewidth=2
+        )
+        axs.stairs(
+            j0_hist_signal.values(),
+            j0_hist_signal.axes[0].edges,
+            color='red',
+            label='Signal',
+            linewidth=3
+        )
+        axs.set_xlabel(dataname+'(j0)')
+        axs.set_ylabel('Counts')
+        axs.set_yscale('log')
+        axs.set_title(dataname+'(j0) Distributions')
+        axs.legend()
+        axs.grid(True)
+
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Show the plot
+    plt.savefig(savefilename+".png")
+
+
+    if kind=="j1":
+        return j1_hist_signal, j1_hist_background
+    else:
+        return j0_hist_signal, j0_hist_background
 
 # Plot Missing Energy
-def PlotMET(masklist, signal_weight_list,background_weight_list,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
+def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
     
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
@@ -153,7 +251,6 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_directory
             
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
-                
                 signal_df = files_functions.openTree(file_path)
     
                 if(masklist is not None):
@@ -227,8 +324,9 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_directory
         number_of_cuts=0
     else:
         number_of_cuts=str(len(masklist))
-    # Show the plot
-    plt.savefig(f"MET{number_of_cuts}.png")
+    
+    # Save the plot
+    plt.savefig(savefilename+".png")
 
 
     #signal and background events to for the 'cut chart'
@@ -240,7 +338,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,signal_directory
 ##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
 
 # Plot Phi(Met)
-def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
+def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
 
     met_phi_hist_background = Hist(
         axis.Regular(binning["Phi"]["bins"], *binning["Phi"]["range"], name="MET_Phi", label="MET Phi (rad)")
@@ -250,11 +348,11 @@ def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
     )
 
 
-    #Signal
-    counter = 0 #which weight we use 
-    for signal_file in sorted(os.listdir(signal_dir)):
+    #Signal Data
+    sigWeightIndex = 0 #which weight we use 
+    for signal_file in sorted(os.listdir(signal_directory)):
         if signal_file.endswith(".root"):
-            file_path = os.path.join(signal_dir, signal_file)
+            file_path = os.path.join(signal_directory, signal_file)
             
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
@@ -266,17 +364,16 @@ def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
                 signal_met_phi = signal_df["MissingET.Phi"].values
                 signal_met_phi = ak.flatten(signal_met_phi).to_numpy()
     
-                met_phi_hist_signal.fill(MET_Phi=signal_met_phi,weight = signal_weight_list[counter])
-                counter += 1
+                met_phi_hist_signal.fill(MET_Phi=signal_met_phi,weight = signal_weight_list[sigWeightIndex])
+                sigWeightIndex += 1
 
     #Background
-    counter = 0
-    for folder_name in os.listdir(current_dir):
-        folder_path = os.path.join(current_dir, folder_name)
+    bkgWeightIndex = 0
+    for folder_name in os.listdir(background_directory):
+        folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
-            cross_section = background_folders[folder_name]
             
             for root_file in os.listdir(folder_path):
                 if root_file.endswith(".root"):
@@ -289,10 +386,9 @@ def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
                     background_met_phi = background_df["MissingET.Phi"].values
                     background_met_phi = ak.flatten(background_met_phi).to_numpy()
                     
-                    met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =background_weight_list[counter])
-                    counter += 1
+                    met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =background_weight_list[bkgWeightIndex])
+                    bkgWeightIndex += 1
                     
-
 
     #Set up histogram
     plt.figure(figsize=(10, 6))
@@ -327,8 +423,9 @@ def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
         number_of_cuts=0
     else:
         number_of_cuts=str(len(masklist))
-    # Show the plot
-    plt.savefig(f"PhiMet{number_of_cuts}.png")
+   
+    # save the plot
+    plt.savefig(savefilename+".png")
 
 
     #signal and background events to for the 'cut chart'
@@ -337,7 +434,18 @@ def PlotPhiMet(masklist,signal_weight_list,background_weight_list):
 
     return numSigEvents, numBkgEvents
 
-def PlotEtaEta(masklist,signal_weight_list,background_weight_list):
+
+
+
+
+# Plot EtaJ0 * EtaJ1
+def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
+    '''
+
+
+    '''
+
+    #TODO refactor to take in same parameters as above functions
 
     etaeta_hist_background = Hist(
         axis.Regular(binning["Eta*Eta"]["bins"], *binning["Eta*Eta"]["range"], name="Eta*Eta", label="Eta*Eta")
@@ -388,13 +496,16 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list):
         number_of_cuts=0
     else:
         number_of_cuts=str(len(masklist))
-    # Show the plot
-    plt.savefig(f"EtaEta{number_of_cuts}.png")
+
+    # ave the plot
+    plt.savefig(savefilename+".png")
 
     #returns hist itself, for use in the Significance function
     return etaeta_hist_signal, etaeta_hist_background
 
-def PlotDeltaJets(masklist,signal_weight_list,background_weight_list):
+
+
+def PlotDeltaJets(masklist,signal_weight_list,background_weight_list,savefilename):
 
     deltaeta_hist_background = Hist(
         axis.Regular(binning["Delta_Eta"]["bins"], *binning["Delta_Eta"]["range"], name="DeltaEta", label="DeltaEta")
@@ -449,13 +560,14 @@ def PlotDeltaJets(masklist,signal_weight_list,background_weight_list):
         number_of_cuts=0
     else:
         number_of_cuts=str(len(masklist))
-    # Show the plot
-    plt.savefig(f"DeltaJets{number_of_cuts}.png")
+
+    # Save
+    plt.savefig(savefilename+".png")
 
     #returns hist itself, for use in the Significance function
     return deltaeta_hist_signal, deltaeta_hist_background
 
-def PlotInvariantMass(masklist,signal_weight_list,background_weight_list):
+def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename):
 
     invariant_hist_background = Hist(
         axis.Regular(binning["Invariant"]["bins"], *binning["Invariant"]["range"], name="Invariant", label="Invariant")
@@ -523,8 +635,9 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list):
         number_of_cuts=0
     else:
         number_of_cuts=str(len(masklist))
-    # Show the plot
-    plt.savefig(f"InvariantMass{number_of_cuts}.png")
+
+    # Save the plot
+    plt.savefig(savefilename+".png")
 
     #signal and background events to for the 'cut chart'
     numSigEvents = invariant_hist_signal.sum()
@@ -532,6 +645,8 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list):
 
     return numSigEvents, numBkgEvents
 
+
+#TODO refactor to take in variables and not use if statements
 def significance_plot(lims,signal_hist,background_hist,kind):
 
     if kind=="eta*eta":
@@ -639,95 +754,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
     for i, idx in enumerate(top_indices):
         print(f"Rank {i + 1}: Significance = {top_significance_values[i]:.3f}, Bin = {top_bin_edges[i]:.3f}")
 
-def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind): 
-    # Create histograms for J0
-    j0_hist_background = Hist(
-        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
-    )
-    j0_hist_signal = Hist(
-        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J0")
-    )
 
-    # Create histograms for J1
-    j1_hist_background = Hist(
-        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
-    )
-    j1_hist_signal = Hist(
-        axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
-    )
-
-    # Retrieve data
-    j0siglist, j1siglist, bkgj0list, bkgj1list = files_functions.getJetsData(dataname, masklist)
-
-    # Fill histograms
-    for i in range(len(j0siglist)):
-        j0_hist_signal.fill(thedata=j0siglist[i], weight=signal_weight_list[i])
-        j1_hist_signal.fill(thedata=j1siglist[i], weight=signal_weight_list[i])
-
-    for i in range(len(background_weight_list)):
-        j0_hist_background.fill(thedata=bkgj0list[i], weight=background_weight_list[i])
-        j1_hist_background.fill(thedata=bkgj1list[i], weight=background_weight_list[i])
-
-    # Create a figure and a set of subplots based on the parameter
-    if kind=="j1":
-        # Plot J1 only
-        fig, axs = plt.subplots(1, 1, figsize=(8, 6))
-
-        axs.stairs(
-            j1_hist_background.values(),
-            j1_hist_background.axes[0].edges,
-            color='blue',
-            label='Background',
-            linewidth=2
-        )
-        axs.stairs(
-            j1_hist_signal.values(),
-            j1_hist_signal.axes[0].edges,
-            color='red',
-            label='Signal',
-            linewidth=3
-        )
-        axs.set_xlabel(dataname+'(j1)')
-        axs.set_ylabel('Counts')
-        axs.set_yscale('log')
-        axs.set_title(dataname+'(j1) Distributions')
-        axs.legend()
-        axs.grid(True)
-    elif kind=="j0":
-        # Plot J0 only
-        fig, axs = plt.subplots(1, 1, figsize=(8, 6))
-
-        axs.stairs(
-            j0_hist_background.values(),
-            j0_hist_background.axes[0].edges,
-            color='blue',
-            label='Background',
-            linewidth=2
-        )
-        axs.stairs(
-            j0_hist_signal.values(),
-            j0_hist_signal.axes[0].edges,
-            color='red',
-            label='Signal',
-            linewidth=3
-        )
-        axs.set_xlabel(dataname+'(j0)')
-        axs.set_ylabel('Counts')
-        axs.set_yscale('log')
-        axs.set_title(dataname+'(j0) Distributions')
-        axs.legend()
-        axs.grid(True)
-
-
-    # Adjust layout
-    plt.tight_layout()
-
-    # Show the plot
-    plt.savefig(f"{dataname}_{kind}_distributions.png")
-    if kind=="j1":
-        return j1_hist_signal, j1_hist_background
-    else:
-        return j0_hist_signal, j0_hist_background
     
 def Get_Table(number_of_sig_events,number_of_bkg_events,significances,cuts):
     # Data for the table
