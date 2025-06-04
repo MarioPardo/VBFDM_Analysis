@@ -76,16 +76,11 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
         
         if signal_file.endswith(".root"):
             file_path = os.path.join(directory, signal_file)
-            i=0
-            # print("step number",i)
-            i+=1
-            
+
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
-                print(file_path)
                 signal_df = openTree(file_path)
                 signal_temp = signal_df["MissingET.MET"].values
-                #print(signal_df.head(3))
 
                 numSigEvents = len(signal_temp)
                 tempSigWeight = calculation_functions.calculateWeight(num_events=numSigEvents,effective_area= file_effectivearea_dir[signal_file],lumi=luminescence)
@@ -110,12 +105,10 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
         
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and (folder_name in folder_effectivearea_dir):
-            print("Folder name:", folder_name)
             cross_section = folder_effectivearea_dir[folder_name]
             
             for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
-                    print(" filename: ", root_file)
                     file_path = os.path.join(folder_path, root_file)
                     background_df = openTree(file_path) 
                     background_temp = background_df["MissingET.MET"].values #arbitraty branch 
@@ -132,77 +125,6 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
                     
     return background_weight_W, background_weight_Z
 
-
-# DEPRECATED
-def get_weights(signal_dir,type_signal,signal_files, background_folders):
-
-    '''This function calculates the weights for signal and background events. 
-    It takes the directory of the signal files and the type of signal (signal or background) as input.
-    It returns a list of weights for the events in the specified type of signal.
-
-    example:
-    signal_weight_list = get_weights(signal_dir, type_signal="signal")
-    background_weight_list = get_weights(background_dir, type_signal="background")
-
-    output:
-    signal_weight_list = [0.0038, 0.0086, 0.0018, 0.00026]
-    background_weight_list = [47744.85, 8818.65]
-    
-    
-    
-    '''
-
-    if type_signal=="signal":
-        signal_weight_list = []
-
-        # Iterate over each signal file
-        for signal_file in sorted(os.listdir(signal_dir)):  #sorted so that it's the same order each time
-            
-            if signal_file.endswith(".root"):
-                file_path = os.path.join(signal_dir, signal_file)
-                i=0
-               # print("step number",i)
-                i+=1
-                
-                # Check if the root file is in the signal_files dictionary
-                if signal_file in signal_files:
-                    print(file_path)
-                    signal_df = openTree(file_path)
-                    signal_temp = signal_df["MissingET.MET"].values
-                    #print(signal_df.head(3))
-
-                    numSigEvents = len(signal_temp)
-                    tempSigWeight = calculation_functions.calculateWeight(num_events=numSigEvents,effective_area= signal_files[signal_file],lumi=luminescence)
-                    signal_weight_list.append(tempSigWeight)
-        
-
-        return signal_weight_list
-            
-
-    elif type_signal=="background":
-        background_weight_list = []
-        print("signal dir: ", signal_dir)
-        for folder_name in sorted(os.listdir(signal_dir)):
-            print("curr folder name:" , folder_name)
-            folder_path = os.path.join(signal_dir, folder_name)
-        
-            # Check if the current item is a directory and if its name is in the background_folders dictionary
-            
-            if os.path.isdir(folder_path) and (folder_name in background_folders):
-                cross_section = background_folders[folder_name]
-                
-                for root_file in os.listdir(folder_path):
-                    if root_file.endswith(".root"):
-                        file_path = os.path.join(folder_path, root_file)
-                        background_df = openTree(file_path) 
-                        background_temp = background_df["MissingET.MET"].values #arbitraty branch 
-
-                        numBkgEvents = len(background_temp)
-                        tempBkgWeight = calculation_functions.calculateWeight(num_events=numBkgEvents, effective_area=cross_section, lumi=luminescence)
-
-                        background_weight_list.append(tempBkgWeight)
-                        
-        return background_weight_list
 
 
 def getJetsData(dataname, masklist,signal_directory=signal_dir,background_directory=background_dir,background_folders=background_folders): 

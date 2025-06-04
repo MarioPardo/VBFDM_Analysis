@@ -50,16 +50,51 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
     )
 
-    j0siglist, j1siglist, bkgj0list, bkgj1list,  = files_functions.getJetsData(dataname,masklist)
+    j0siglist, j1siglist, bkgWlist, bkgZlist,  = files_functions.getJetsData(dataname,masklist)
 
+    # Fill Signal
     for i in range(len(j0siglist)):
         j0_hist_signal.fill(thedata=j0siglist[i], weight=signal_weight_list[i])
         j1_hist_signal.fill(thedata=j1siglist[i], weight=signal_weight_list[i])
 
+    # Fill Background
+    bkgW_weights = background_weight_list[0]
+    bkgZ_weights = background_weight_list[1]
 
-    for i in range(len(bkgj0list)):
-        j0_hist_background.fill(thedata=bkgj0list[i], weight=background_weight_list[i])
-        j1_hist_backgruts_strings=['no cuts', 'Eta(j0) * Eta(j1) < 0', 'Pt(j0) > 30',  'Pt(j1) > 30', 'MET > 50']
+    for i in range(len(bkgW_weights)): 
+        j0_hist_background.fill(thedata=bkgWlist[0][i], weight=bkgW_weights[i])
+        j1_hist_background.fill(thedata=bkgWlist[1][i], weight=bkgW_weights[i])
+
+    #J1
+    for i in range(len(bkgZ_weights)): 
+        j0_hist_background.fill(thedata=bkgZlist[0][i], weight=bkgZ_weights[i])
+        j1_hist_background.fill(thedata=bkgZlist[1][i], weight=bkgZ_weights[i])
+
+    
+    
+    # Create a figure and a set of subplots (2 columns, 1 row)More actions
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+    # Plot J0
+    axs[0].stairs(
+        j0_hist_background.values(),
+        j0_hist_background.axes[0].edges,
+        color='blue',
+        label='Background',
+        linewidth=2
+    )
+    axs[0].stairs(
+        j0_hist_signal.values(),
+        j0_hist_signal.axes[0].edges,
+        color='red',
+        label='Signal',
+        linewidth=3
+    )
+    axs[0].set_xlabel(dataname+'(j0)')
+    axs[0].set_ylabel('Counts')
+    axs[0].set_yscale('log')
+    axs[0].set_title(dataname+'(j0) Distributions')
+    axs[0].legend()
     axs[0].grid(True)
 
     # Plot J1
@@ -567,17 +602,12 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     #Data needed: pt0, eta0, phi0, m0, pt1, eta1, phi1, m1
     background_weights_W = background_weight_list[0]
     background_weights_Z = background_weight_list[1]
-    print("Length of background_weights_W:", len(background_weights_W))
+
 
     ptj0siglist, ptj1siglist, ptbkgWlists, ptbkgZlists = files_functions.getJetsData("PT",masklist)
     etaj0siglist, etaj1siglist, etabkgWlists, etabkgZlists = files_functions.getJetsData("Eta",masklist)
     phij0siglist, phij1siglist, phibkgWlists, phibkgZlists = files_functions.getJetsData("Phi",masklist)
     massj0siglist, massj1siglist, massbkgWlists, massbkgZlists = files_functions.getJetsData("Mass",masklist)
-
-   
-
-   
-    print("Length of ptbkgWlists[0]:", len(ptbkgWlists[0]))
 
     for i in range(len(ptj0siglist)):
         
