@@ -102,7 +102,8 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
     in the dictionary 'file_effectivearea_dir
     '''
 
-    background_weight_list = []
+    background_weight_W= []
+    background_weight_Z = []
 
     for folder_name in sorted(os.listdir(directory)):
         folder_path = os.path.join(directory, folder_name)
@@ -122,9 +123,14 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
                     numBkgEvents = len(background_temp)
                     tempBkgWeight = calculation_functions.calculateWeight(num_events=numBkgEvents, effective_area=cross_section, lumi=luminescence)
 
-                    background_weight_list.append(tempBkgWeight)
+                    if folder_name.startswith("W"):
+                        background_weight_W.append(tempBkgWeight)
+                    elif folder_name.startswith("Z"):
+                        background_weight_Z.append(tempBkgWeight)
+
+            
                     
-    return background_weight_list
+    return background_weight_W, background_weight_Z
 
 
 # DEPRECATED
@@ -232,8 +238,8 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
     
 
     # Background processing
-    background_j0_list = []
-    background_j1_list = []
+    background_Z_lists = [[],[]] #first entry is j0, second entry is j1
+    background_W_lists = [[],[]]
 
 
     for folder_name in sorted(os.listdir(background_directory)):
@@ -258,12 +264,17 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
                     background_j0 = np.array([entry[0] for entry in background_filtered_jets])
                     background_j1 = np.array([entry[1] for entry in background_filtered_jets])
 
+                    if folder_name.startswith("Z"):
+                        background_Z_lists[0].append(background_j0)
+                        background_Z_lists[1].append(background_j1)
+                    elif folder_name.startswith("W"):
+                        background_W_lists[0].append(background_j0)
+                        background_W_lists[1].append(background_j1)
                   
-                    background_j0_list.append(background_j0)
-                    background_j1_list.append(background_j1)
                     
 
-    return signal_j0_list, signal_j1_list, background_j0_list, background_j1_list
+    return signal_j0_list, signal_j1_list, background_W_lists, background_Z_lists
+
         
 
 # # # # # # # End of Gathering Data Functions # # # # # #

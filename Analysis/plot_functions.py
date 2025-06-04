@@ -545,20 +545,39 @@ def PlotDeltaJets(masklist,signal_weight_list,background_weight_list,savefilenam
 
 def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename):
 
+    print("Plotting Invariant Mass")
+
     invariant_hist_background = Hist(
         axis.Regular(binning["Invariant"]["bins"], *binning["Invariant"]["range"], name="Invariant", label="Invariant")
     )
+
+    #for internal number event counts only
+    bkg_W_hist = Hist(
+        axis.Regular(binning["Invariant"]["bins"], *binning["Invariant"]["range"], name="Invariant", label="Invariant")
+    )
+    bkg_Z_hist = Hist(
+        axis.Regular(binning["Invariant"]["bins"], *binning["Invariant"]["range"], name="Invariant", label="Invariant")
+    )
+    ####
 
     invariant_hist_signal = Hist(
         axis.Regular(binning["Invariant"]["bins"], *binning["Invariant"]["range"], name="Invariant", label="Invariant")
     )
 
     #Data needed: pt0, eta0, phi0, m0, pt1, eta1, phi1, m1
+    background_weights_W = background_weight_list[0]
+    background_weights_Z = background_weight_list[1]
+    print("Length of background_weights_W:", len(background_weights_W))
 
-    ptj0siglist, ptj1siglist, ptbkgj0list, ptbkgj1list  = files_functions.getJetsData("PT",masklist)
-    etaj0siglist, etaj1siglist, etabkgj0list, etabkgj1list = files_functions.getJetsData("Eta",masklist)
-    phij0siglist, phij1siglist, phibkgj0list, phibkgj1list  = files_functions.getJetsData("Phi",masklist)
-    massj0siglist, massj1siglist, massbkgj0list, massbkgj1list   = files_functions.getJetsData("Mass",masklist)
+    ptj0siglist, ptj1siglist, ptbkgWlists, ptbkgZlists = files_functions.getJetsData("PT",masklist)
+    etaj0siglist, etaj1siglist, etabkgWlists, etabkgZlists = files_functions.getJetsData("Eta",masklist)
+    phij0siglist, phij1siglist, phibkgWlists, phibkgZlists = files_functions.getJetsData("Phi",masklist)
+    massj0siglist, massj1siglist, massbkgWlists, massbkgZlists = files_functions.getJetsData("Mass",masklist)
+
+   
+
+   
+    print("Length of ptbkgWlists[0]:", len(ptbkgWlists[0]))
 
     for i in range(len(ptj0siglist)):
         
@@ -567,13 +586,33 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
                         pt1=ptj1siglist[i], eta1=etaj1siglist[i], phi1 = phij1siglist[i],m1=massj1siglist[i]),
             weight = signal_weight_list[i])
     
-
-    for i in range(len(background_weight_list)):
+    for i in range(len(background_weights_W)):
+        #W Boson
         invariant_hist_background.fill(
-        calculation_functions.calc_invariant_mass(
-                    pt0=ptbkgj0list[i], eta0=etabkgj0list[i], phi0 = phibkgj0list[i],m0=massbkgj0list[i],
-                    pt1=ptbkgj1list[i], eta1=etabkgj1list[i], phi1 = phibkgj1list[i],m1=massbkgj1list[i]),
-                    weight = background_weight_list[i])
+            calculation_functions.calc_invariant_mass(
+                    pt0=ptbkgWlists[0][i], eta0=etabkgWlists[0][i], phi0 = phibkgWlists[0][i],m0=massbkgWlists[0][i],
+                    pt1=ptbkgWlists[1][i], eta1=etabkgWlists[1][i], phi1 = phibkgWlists[1][i],m1=massbkgWlists[1][i]),
+                    weight = background_weights_W[i])
+        
+        bkg_W_hist.fill(
+            calculation_functions.calc_invariant_mass(
+                    pt0=ptbkgWlists[0][i], eta0=etabkgWlists[0][i], phi0 = phibkgWlists[0][i],m0=massbkgWlists[0][i],
+                    pt1=ptbkgWlists[1][i], eta1=etabkgWlists[1][i], phi1 = phibkgWlists[1][i],m1=massbkgWlists[1][i]),
+                    weight = background_weights_W[i])
+
+    for i in range(len(background_weights_Z)):
+        #Z Boson
+        invariant_hist_background.fill(
+            calculation_functions.calc_invariant_mass(
+                    pt0=ptbkgZlists[0][i], eta0=etabkgZlists[0][i], phi0 = phibkgZlists[0][i],m0=massbkgZlists[0][i],
+                    pt1=ptbkgZlists[1][i], eta1=etabkgZlists[1][i], phi1 = phibkgZlists[1][i],m1=massbkgZlists[1][i]),
+                    weight = background_weights_Z[i])
+        
+        bkg_Z_hist.fill(
+            calculation_functions.calc_invariant_mass(
+                    pt0=ptbkgZlists[0][i], eta0=etabkgZlists[0][i], phi0 = phibkgZlists[0][i],m0=massbkgZlists[0][i],
+                    pt1=ptbkgZlists[1][i], eta1=etabkgZlists[1][i], phi1 = phibkgZlists[1][i],m1=massbkgZlists[1][i]),
+                    weight = background_weights_Z[i])
 
 
 
@@ -618,8 +657,10 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     #signal and background events to for the 'cut chart'
     numSigEvents = invariant_hist_signal.sum()
     numBkgEvents = invariant_hist_background.sum()
+    numBkgWEvents = bkg_W_hist.sum()
+    numBkgZEvents = bkg_Z_hist.sum()
 
-    return numSigEvents, numBkgEvents
+    return numSigEvents, numBkgEvents, numBkgWEvents, numBkgZEvents
 
 
 #TODO refactor to take in variables and not use if statements
