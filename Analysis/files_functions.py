@@ -106,13 +106,15 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
 
     for folder_name in sorted(os.listdir(directory)):
         folder_path = os.path.join(directory, folder_name)
-
+        
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and (folder_name in folder_effectivearea_dir):
+            print("Folder name:", folder_name)
             cross_section = folder_effectivearea_dir[folder_name]
             
-            for root_file in os.listdir(folder_path):
+            for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
+                    print(" filename: ", root_file)
                     file_path = os.path.join(folder_path, root_file)
                     background_df = openTree(file_path) 
                     background_temp = background_df["MissingET.MET"].values #arbitraty branch 
@@ -240,7 +242,7 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
 
-            for root_file in os.listdir(folder_path):
+            for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = openTree(file_path)  

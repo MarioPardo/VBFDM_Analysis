@@ -242,13 +242,13 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
     #Background Data
     bkgWeightIndex = 0
 
-    for folder_name in os.listdir(background_directory):
+    for folder_name in sorted(os.listdir(background_directory)):
         folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
             
-            for root_file in os.listdir(folder_path):
+            for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = files_functions.openTree(file_path)
@@ -345,13 +345,13 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
 
     #Background
     bkgWeightIndex = 0
-    for folder_name in os.listdir(background_directory):
+    for folder_name in sorted(os.listdir(background_directory)):
         folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
             
-            for root_file in os.listdir(folder_path):
+            for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = files_functions.openTree(file_path)
