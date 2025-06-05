@@ -137,6 +137,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
     return numSigEvents, numBkgEvents
 
+#TODO adapt to new handling of background (W,Z)
 # Plots a certain graph for a certain jet, J0 or J1
 def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename): 
     '''
@@ -250,6 +251,13 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
     met_hist_background = Hist(
         axis.Regular(binning["Transverse"]["bins"], *binning["Transverse"]["range"], name="MET", label="MET")
     )
+    z_background_hist=Hist(
+        axis.Regular(binning["Transverse"]["bins"], *binning["Transverse"]["range"], name="MET", label="MET")
+    )
+    w_background_hist=Hist(
+        axis.Regular(binning["Transverse"]["bins"], *binning["Transverse"]["range"], name="MET", label="MET")
+    )
+
     met_hist_signal = Hist(
         axis.Regular(binning["Transverse"]["bins"], *binning["Transverse"]["range"], name="MET", label="MET")
     )
@@ -275,14 +283,18 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 
 
     #Background Data
-    bkgWeightIndex = 0
+    bkgWeightsW  = background_weight_list[0]
+    bkgWeightsZ  = background_weight_list[1]
+    currBkgWeightList = None
+
 
     for folder_name in sorted(os.listdir(background_directory)):
         folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
-            
+
+            bkgWeightIndex = 0
             for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
@@ -294,13 +306,18 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
                     background_met = background_df["MissingET.MET"].values
                     background_met = ak.flatten(background_met).to_numpy()
                    
-                    met_hist_background.fill(MET=background_met,weight =background_weight_list[bkgWeightIndex])
+                    if folder_name.startswith("W"):
+                        currBkgWeightList = bkgWeightsW
+                        w_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                    elif folder_name.startswith("Z"):
+                        currBkgWeightList = bkgWeightsZ
+                        z_background_hist .fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                    
+
+                    met_hist_background.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
                     bkgWeightIndex+=1
                 
                     
-
-
-
 
     #Set up histogram
     plt.figure(figsize=(10, 6))
@@ -331,20 +348,17 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
     plt.legend()
     plt.grid(True)
     
-    if masklist==None:
-        number_of_cuts=0
-    else:
-        number_of_cuts=str(len(masklist))
     
     # Save the plot
     plt.savefig(savefilename+".png")
 
-
     #signal and background events to for the 'cut chart'
     numSigEvents = met_hist_signal.sum() 
     numBkgEvents = met_hist_background.sum()
+    numWBkgEvents = w_background_hist.sum()
+    numZBkgEvents = z_background_hist.sum()
 
-    return numSigEvents, numBkgEvents
+    return numSigEvents, numBkgEvents,numWBkgEvents, numZBkgEvents
 
 ##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
 
@@ -461,17 +475,26 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
     etaeta_hist_background = Hist(
         axis.Regular(binning["Eta*Eta"]["bins"], *binning["Eta*Eta"]["range"], name="Eta*Eta", label="Eta*Eta")
     )
+
     etaeta_hist_signal = Hist(
         axis.Regular(binning["Eta*Eta"]["bins"], *binning["Eta*Eta"]["range"], name="Eta*Eta", label="Eta*Eta")
     )
 
-    j0siglist, j1siglist, bkgj0list, bkgj1list, = files_functions.getJetsData("Eta",masklist)
+    j0siglist, j1siglist, bkgWlist, bkgZlist, = files_functions.getJetsData("Eta",masklist)
 
+    # Fill Signal
     for i in range(len(j0siglist)):
         etaeta_hist_signal.fill(j0siglist[i]*j1siglist[i], weight=signal_weight_list[i])
 
-    for i in range(len(background_weight_list)):
-        etaeta_hist_background.fill(bkgj0list[i]*bkgj1list[i], weight = background_weight_list[i])
+    # Fill Background
+    bkgW_weights = background_weight_list[0]
+    bkgZ_weights = background_weight_list[1]
+
+    for i in range(len(bkgW_weights)): 
+        etaeta_hist_background.fill(bkgWlist[0][i] * bkgWlist[1][i], weight=bkgW_weights[i])
+
+    for i in range(len(bkgZ_weights)): 
+        etaeta_hist_background.fill(bkgZlist[0][i] * bkgZlist[1][i], weight=bkgZ_weights[i])
 
 
     #Set up histogram
@@ -527,14 +550,21 @@ def PlotDeltaJets(masklist,signal_weight_list,background_weight_list,savefilenam
     )
 
 
-    j0siglist, j1siglist, bkgj0list, bkgj1list = files_functions.getJetsData("Eta",masklist)
+    j0siglist, j1siglist, bkgWlist, bkgZlist = files_functions.getJetsData("Eta",masklist)
 
-    
+    # Fill signal
     for i in range(len(j0siglist)):
         deltaeta_hist_signal.fill(np.abs(j0siglist[i]-j1siglist[i]), weight=signal_weight_list[i])
 
-    for i in range(len(background_weight_list)):
-        deltaeta_hist_background.fill(np.abs(bkgj0list[i]-bkgj1list[i]), weight = background_weight_list[i])
+     # Fill Background
+    bkgW_weights = background_weight_list[0]
+    bkgZ_weights = background_weight_list[1]
+
+    for i in range(len(bkgW_weights)): 
+        deltaeta_hist_background.fill(np.abs(bkgWlist[0][i] - bkgWlist[1][i]), weight=bkgW_weights[i])
+
+    for i in range(len(bkgZ_weights)): 
+        deltaeta_hist_background.fill(np.abs(bkgZlist[0][i] - bkgZlist[1][i]), weight=bkgZ_weights[i])
 
 
     #Set up histogram
@@ -566,11 +596,6 @@ def PlotDeltaJets(masklist,signal_weight_list,background_weight_list,savefilenam
     plt.legend()
     plt.grid(True)
 
-        
-    if masklist==None:
-        number_of_cuts=0
-    else:
-        number_of_cuts=str(len(masklist))
 
     # Save
     plt.savefig(savefilename+".png")
