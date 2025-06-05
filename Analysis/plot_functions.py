@@ -828,12 +828,22 @@ def significance_plot(lims,signal_hist,background_hist,kind):
 
 
     
-def Get_Table(number_of_sig_events,number_of_bkg_events,significances,cuts):
+def Get_Table(number_of_sig_events, number_of_bkg_events, numWBkgEvents, numZBkgEvents, significances, cuts):
     # Data for the table
-    
-    data = [[i,cuts[i],number_of_sig_events[i],number_of_bkg_events[i],significances[i]] for i in range(len(cuts))]
+    data = [
+        [
+            i,
+            cuts[i],
+            number_of_sig_events[i],
+            number_of_bkg_events[i],
+            numWBkgEvents[i],
+            numZBkgEvents[i],
+            significances[i]
+        ]
+        for i in range(len(cuts))
+    ]
 
-    columns = ["","Cut","Signal Events", "Background Events", "Significance"]
+    columns = ["", "Cut", "Signal Events", "Background Events", "W Bkg Events", "Z Bkg Events", "Significance"]
 
     # Create the figure and axis
     fig, ax = plt.subplots()
