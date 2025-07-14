@@ -43,8 +43,12 @@ def openTree(tree_filepath):
     - Jet.Eta
     - Jet.Mass
     ''' 
-    file = uproot.open(tree_filepath)
-    tree = file[tree_name]
+    try:
+        file = uproot.open(tree_filepath)
+        tree = file[tree_name]
+    except Exception as e:
+        print("Error opening root file: " + tree_filepath)
+        return None
 
     #What we want to keep
     branches_wanted = [
@@ -80,6 +84,10 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
                 signal_df = openTree(file_path)
+                if signal_df is None:
+                    print("Ignoring root file: " + file_path)
+                    continue
+
                 signal_temp = signal_df["MissingET.MET"].values
 
                 numSigEvents = len(signal_temp)
@@ -111,6 +119,9 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = openTree(file_path) 
+                    if background_df is None:
+                        print("Ignoring root file: " + file_path)
+                        continue
                     background_temp = background_df["MissingET.MET"].values #arbitraty branch 
 
                     numBkgEvents = len(background_temp)
@@ -141,10 +152,12 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
                 signal_df = openTree(file_path)
+                if signal_df is None:
+                    print("Ignoring root file: " + file_path)
+                    continue
 
                 if(masklist is not None):
                     signal_df = applyMultipleCuts(signal_df,masklist)
-
 
                  # Extract and filter jet data
                 signal_jets = signal_df["Jet." + dataname].values
@@ -174,6 +187,9 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = openTree(file_path)  
+                    if background_df is None:
+                        print("Ignoring root file: " + file_path)
+                        continue
 
                     if(masklist is not None):
                         background_df = applyMultipleCuts(background_df, masklist)
