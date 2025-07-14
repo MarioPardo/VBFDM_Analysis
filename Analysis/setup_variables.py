@@ -27,14 +27,22 @@ tree_name= "Delphes"  #all of them are named delphes
 luminescence = 300 #fb
 
 #Signal Data
-signal_folder = "/home/phenoprojects/MC_Samples/CODIGO_ANALISIS_VBF_DM/signal_folder"
+signal_folder = "/MC_Samples/SimplifiedModelsSignals/"
 signal_dir = os.path.join(current_dir, signal_folder)
 signal_files = {    
-            "DMsimpl_spin0_Y0gg1_DeltaEta2.root": 1.64749 * 1000, #times 1000 to convert from pb to fb
+            "DMsimpl_spin0_Y0gg_1_MY0_1000_MXd_20_DeltaEta2.root": 1.64749 * 1000, #times 1000 to convert from pb to fb
+            "DMsimpl_spin0_Y0gg_1_MY0_100_MXd_20_DeltaEta2.root": 1.64749 * 1000,
             }
 
+
+def SetSignalFile(new_signal_files_dict):
+    global signal_files
+    signal_files = new_signal_files_dict
+
+
+
 #Background Data
-background_dir = "/home/phenoprojects/MC_Samples/CODIGO_ANALISIS_VBF_DM/background_data"
+background_dir = "/MC_Samples/"
 background_folders = {  #"BKG_Wjets_WToLNu" : 47744.85 * 1000,
                        "Wlnu_jets": 61082.51494 * 1000,
                        "Znunu_jets": 12995.62137 * 1000}  
