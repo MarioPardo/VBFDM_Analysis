@@ -271,6 +271,9 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
                 signal_df = files_functions.openTree(file_path)
+                if signal_df is None:
+                    print("Ignoring root file: " + file_path)
+                    continue
     
                 if(masklist is not None):
                     signal_df = files_functions.applyMultipleCuts(signal_df,masklist)
@@ -299,6 +302,9 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = files_functions.openTree(file_path)
+                    if background_df is None:
+                        print("Ignoring root file: " + file_path)
+                        continue
 
                     if(masklist is not None):
                         background_df = files_functions.applyMultipleCuts(background_df, masklist)
@@ -311,7 +317,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
                         w_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
                     elif folder_name.startswith("Z"):
                         currBkgWeightList = bkgWeightsZ
-                        z_background_hist .fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                        z_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
                     
 
                     met_hist_background.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
@@ -365,7 +371,14 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 # Plot Phi(Met)
 def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
 
+
     met_phi_hist_background = Hist(
+        axis.Regular(binning["Phi"]["bins"], *binning["Phi"]["range"], name="MET_Phi", label="MET Phi (rad)")
+    )
+    z_background_hist=Hist(
+        axis.Regular(binning["Phi"]["bins"], *binning["Phi"]["range"], name="MET_Phi", label="MET Phi (rad)")
+    )
+    w_background_hist=Hist(
         axis.Regular(binning["Phi"]["bins"], *binning["Phi"]["range"], name="MET_Phi", label="MET Phi (rad)")
     )
     met_phi_hist_signal = Hist(
@@ -382,6 +395,9 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
             # Check if the root file is in the signal_files dictionary
             if signal_file in signal_files:
                 signal_df = files_functions.openTree(file_path)
+                if signal_df is None:
+                    print("Ignoring root file: " + file_path)
+                    continue
     
                 if(masklist is not None):
                     signal_df = files_functions.applyMultipleCuts(signal_df,masklist)
@@ -393,25 +409,40 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
                 sigWeightIndex += 1
 
     #Background
-    bkgWeightIndex = 0
+    bkgWeightsW  = background_weight_list[0]
+    bkgWeightsZ  = background_weight_list[1]
+    currBkgWeightList = None
+
+
+  
     for folder_name in sorted(os.listdir(background_directory)):
         folder_path = os.path.join(background_directory, folder_name)
             
         # Check if the current item is a directory and if its name is in the background_folders dictionary
         if os.path.isdir(folder_path) and folder_name in background_folders:
             
+            bkgWeightIndex = 0
             for root_file in sorted(os.listdir(folder_path)):
                 if root_file.endswith(".root"):
                     file_path = os.path.join(folder_path, root_file)
                     background_df = files_functions.openTree(file_path)
+                    if background_df is None:
+                        print("Ignoring root file: " + file_path)
+                        continue
 
                     if(masklist is not None):
                         background_df = files_functions.applyMultipleCuts(background_df, masklist)
 
                     background_met_phi = background_df["MissingET.Phi"].values
                     background_met_phi = ak.flatten(background_met_phi).to_numpy()
+                    if folder_name.startswith("W"):
+                        currBkgWeightList = bkgWeightsW
+                        w_background_hist.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
+                    elif folder_name.startswith("Z"):
+                        currBkgWeightList = bkgWeightsZ
+                        z_background_hist.fill(MET_Phi=background_met_phi,weight=currBkgWeightList[bkgWeightIndex])
                     
-                    met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =background_weight_list[bkgWeightIndex])
+                    met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
                     bkgWeightIndex += 1
                     
 
@@ -444,10 +475,6 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
     plt.legend()
     plt.grid(True)
         
-    if masklist==None:
-        number_of_cuts=0
-    else:
-        number_of_cuts=str(len(masklist))
    
     # save the plot
     plt.savefig(savefilename+".png")
@@ -456,8 +483,10 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
     #signal and background events to for the 'cut chart'
     numSigEvents = met_phi_hist_signal.sum() 
     numBkgEvents = met_phi_hist_background.sum()
+    numWBkgEvents = w_background_hist.sum()
+    numZBkgEvents = z_background_hist.sum()
 
-    return numSigEvents, numBkgEvents
+    return numSigEvents, numBkgEvents,numWBkgEvents, numZBkgEvents
 
 
 
