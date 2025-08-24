@@ -128,14 +128,15 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         number_of_cuts=str(len(masklist))
     
     # Show the plot
-    plt.savefig(savefilename+".png")
+    if savefilename is not None:
+        plt.savefig(savefilename+".png")
 
 
     #signal and background events to for the 'cut chart'
     numSigEvents = j0_hist_signal.sum() + j1_hist_signal.sum()
     numBkgEvents = j0_hist_background.sum() + j1_hist_background.sum()
 
-    return numSigEvents, numBkgEvents
+    return numSigEvents, numBkgEvents, [j0_hist_signal, j0_hist_background], [j1_hist_signal, j1_hist_background]
 
 #TODO adapt to new handling of background (W,Z)
 # Plots a certain graph for a certain jet, J0 or J1
@@ -236,6 +237,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
         return j1_hist_signal, j1_hist_background
     else:
         return j0_hist_signal, j0_hist_background
+
 
 # Plot Missing Energy
 def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
@@ -751,7 +753,7 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
 def significance_plot(lims,signal_hist,background_hist,kind):
 
     if kind=="eta*eta":
-        significance = files_functions.GetSignificances(signal_hist,background_hist)
+        significance = GetSignificances(signal_hist,background_hist)
 
         # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
@@ -801,11 +803,13 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         bin_edges = signal_hist.axes[0].edges
 
         # Plot significance
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(20, 6))  # <-- Make the figure wider by increasing the first value
         plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
 
         # Add labels and title
         plt.xlabel('PT(j0)')
+        # Set x-axis ticks every 20 units
+        plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
         #plt.xlim(0, 5)  #from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
@@ -897,3 +901,46 @@ def Get_Table(number_of_sig_events, number_of_bkg_events, numWBkgEvents, numZBkg
     # Display the plot
     plt.savefig("Final_Table.png")
         
+
+
+def GetSignificances(sighist,bkghist):
+    '''Calculate and return an array of significances from a given
+        signal data histogram, and background data histogram.
+    '''
+    signal_counts = sighist.values()
+    bkg_counts = bkghist.values()
+
+    significance = []
+    for n_s, n_b in zip(signal_counts, bkg_counts):
+        if n_b + n_s > 0:
+            S = calculation_functions.calculateSignificance(numSig=n_s, numBkg=n_b)
+            significance.append(S)
+        else:
+            significance.append(0)  # If both are zero, significance is zero.
+
+    return np.array(significance)
+
+
+def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None):
+    # Calculate significance bin by bin
+    significance = GetSignificances(signal_hist, bkg_hist)
+
+    # Get bin edges
+    bin_edges = signal_hist.axes[0].edges
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.step(bin_edges[:-1], significance, where='mid',
+             label='Significance', color='purple', linewidth=2)
+
+    # Labels and title
+    plt.xlabel(xlabel)
+    if xlim is not None:
+        plt.xlim(xlim)   # expects tuple like (-17, 17)
+    plt.ylabel('Significance')
+    plt.yscale('log')
+    plt.title(title)
+    plt.grid(True)
+    plt.legend()
+
+    plt.show()
