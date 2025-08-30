@@ -570,7 +570,7 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
 
 
 
-def PlotDeltaJets(masklist,signal_weight_list,background_weight_list,savefilename):
+def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename):
 
     deltaeta_hist_background = Hist(
         axis.Regular(binning["Delta_Eta"]["bins"], *binning["Delta_Eta"]["range"], name="DeltaEta", label="DeltaEta")
@@ -746,7 +746,7 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     numBkgWEvents = bkg_W_hist.sum()
     numBkgZEvents = bkg_Z_hist.sum()
 
-    return numSigEvents, numBkgEvents, numBkgWEvents, numBkgZEvents
+    return numSigEvents, numBkgEvents, numBkgWEvents, numBkgZEvents, invariant_hist_signal, invariant_hist_background
 
 
 #TODO refactor to take in variables and not use if statements
@@ -782,11 +782,13 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         bin_edges = signal_hist.axes[0].edges
 
         # Plot significance
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(30, 6))
         plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
 
         # Add labels and title
         plt.xlabel('Delta(Eta(J0,J1))')
+        # Set x-axis ticks every 0.1 units
+        plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 0.1))
         plt.xlim(lims[0], lims[1])  #from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
@@ -828,11 +830,13 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         bin_edges = signal_hist.axes[0].edges
 
         # Plot significance
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(20, 6))
         plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
 
         # Add labels and title
         plt.xlabel('PT(j1)')
+        # Set x-axis ticks every 20 units
+        plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
         #plt.xlim(0, 5)  #from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
@@ -842,6 +846,28 @@ def significance_plot(lims,signal_hist,background_hist,kind):
 
         # Show the plot
         plt.savefig("Significance_Plot_PT(j1).png")
+
+    elif kind == "Invariant":
+        significance = files_functions.GetSignificances(signal_hist, background_hist)
+
+        # Get bin edges from the histogram
+        bin_edges = signal_hist.axes[0].edges
+
+        # Plot significance
+        plt.figure(figsize=(40, 6))
+        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+
+        # Add labels and title
+        plt.xlabel('Invariant Mass (j0, j1)')
+        #X axis ticks every 50
+        plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 50))
+        plt.ylabel('Significance')
+        plt.yscale('log')
+        plt.title('Significance Plot: Invariant Mass')
+        plt.grid(True)
+        plt.legend()
+
+        plt.savefig("Significance_Plot_Invariant_Mass.png")
 
     #Top 5 points
     # Find the indices of the top 5 significance values
