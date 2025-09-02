@@ -753,43 +753,39 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
 def significance_plot(lims,signal_hist,background_hist,kind):
 
     if kind=="eta*eta":
-        significance = GetSignificances(signal_hist,background_hist)
+        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
 
         # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
 
         # Plot significance
         plt.figure(figsize=(10, 6))
-        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+        plt.step(bin_edges[:-1], significance_up, where='mid', label='Significance (cut up)', color='red', linewidth=2)
+        plt.step(bin_edges[:-1], significance_down, where='mid', label='Significance (cut down)', color='blue', linewidth=2)
 
         # Add labels and title
         plt.xlabel('Eta(j0) * Eta(j1)')
-        plt.xlim(lims[0], lims[1])  #from visual inspection
+        plt.xlim(lims[0], lims[1])  # from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
 
-        # Show the plot
         plt.savefig("Significance_plot_eta*eta.png")
-    
+
     elif kind=="Delta(eta)":
+        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
 
-        significance = files_functions.GetSignificances(signal_hist,background_hist)
-
-        # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
 
-        # Plot significance
         plt.figure(figsize=(30, 6))
-        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+        plt.step(bin_edges[:-1], significance_up, where='mid', label='Significance (cut up)', color='red', linewidth=2)
+        plt.step(bin_edges[:-1], significance_down, where='mid', label='Significance (cut down)', color='blue', linewidth=2)
 
-        # Add labels and title
         plt.xlabel('Delta(Eta(J0,J1))')
-        # Set x-axis ticks every 0.1 units
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 0.1))
-        plt.xlim(lims[0], lims[1])  #from visual inspection
+        plt.xlim(lims[0], lims[1])
         plt.ylabel('Significance')
         plt.yscale('log')
         plt.title('Significance Plot')
@@ -799,67 +795,53 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.savefig("Significance_plot_Delta(eta).png")
 
     elif kind=="j0":
-        significance = files_functions.GetSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
 
-        # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
 
-        # Plot significance
-        plt.figure(figsize=(20, 6))  # <-- Make the figure wider by increasing the first value
-        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+        plt.figure(figsize=(20, 6))
+        plt.step(bin_edges[:-1], significance_up, where='mid', label='Significance (cut up)', color='red', linewidth=2)
+        plt.step(bin_edges[:-1], significance_down, where='mid', label='Significance (cut down)', color='blue', linewidth=2)
 
-        # Add labels and title
         plt.xlabel('PT(j0)')
-        # Set x-axis ticks every 20 units
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
-        #plt.xlim(0, 5)  #from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
 
-        # Show the plot
         plt.savefig("Significance_Plot_PT(j0).png")
 
-        
     elif kind=="j1":
-        significance = files_functions.GetSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
 
-        # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
 
-        # Plot significance
         plt.figure(figsize=(20, 6))
-        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+        plt.step(bin_edges[:-1], significance_up, where='mid', label='Significance (cut up)', color='red', linewidth=2)
+        plt.step(bin_edges[:-1], significance_down, where='mid', label='Significance (cut down)', color='blue', linewidth=2)
 
-        # Add labels and title
         plt.xlabel('PT(j1)')
-        # Set x-axis ticks every 20 units
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
-        #plt.xlim(0, 5)  #from visual inspection
         plt.ylabel('Significance')
         plt.yscale('log')
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
 
-        # Show the plot
         plt.savefig("Significance_Plot_PT(j1).png")
 
     elif kind == "Invariant":
-        significance = files_functions.GetSignificances(signal_hist, background_hist)
+        significance_up, significance_down =GetCulmulativeSignificances(signal_hist, background_hist)
 
-        # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
 
-        # Plot significance
         plt.figure(figsize=(40, 6))
-        plt.step(bin_edges[:-1], significance, where='mid', label='Significance', color='purple', linewidth=2)
+        plt.step(bin_edges[:-1], significance_up, where='mid', label='Significance (cut up)', color='red', linewidth=2)
+        plt.step(bin_edges[:-1], significance_down, where='mid', label='Significance (cut down)', color='blue', linewidth=2)
 
-        # Add labels and title
         plt.xlabel('Invariant Mass (j0, j1)')
-        #X axis ticks every 50
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 50))
         plt.ylabel('Significance')
         plt.yscale('log')
@@ -869,6 +851,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
 
         plt.savefig("Significance_Plot_Invariant_Mass.png")
 
+    '''
     #Top 5 points
     # Find the indices of the top 5 significance values
     top_indices = np.argsort(significance)[-5:]  # Get indices of the 5 largest values
@@ -884,6 +867,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
     print("Top 5 Significance Values and Their Corresponding Bins:")
     for i, idx in enumerate(top_indices):
         print(f"Rank {i + 1}: Significance = {top_significance_values[i]:.3f}, Bin = {top_bin_edges[i]:.3f}")
+    '''
 
 
     
@@ -929,27 +913,49 @@ def Get_Table(number_of_sig_events, number_of_bkg_events, numWBkgEvents, numZBkg
         
 
 
-def GetSignificances(sighist,bkghist):
-    '''Calculate and return an array of significances from a given
-        signal data histogram, and background data histogram.
-    '''
-    signal_counts = sighist.values()
-    bkg_counts = bkghist.values()
 
-    significance = []
-    for n_s, n_b in zip(signal_counts, bkg_counts):
+def GetCulmulativeSignificances(sighist, bkghist):
+    """
+    Calculate and return two arrays of significances:
+    1. Cumulative cuts "up"   (x >= bin_edge)
+    2. Cumulative cuts "down" (x <= bin_edge)
+    """
+    signal_counts = np.array(list(sighist.values()))
+    bkg_counts = np.array(list(bkghist.values()))
+
+    # "Up" cut → cumulative sums from right to left
+    sig_up = np.cumsum(signal_counts[::-1])[::-1]
+    bkg_up = np.cumsum(bkg_counts[::-1])[::-1]
+
+    # "Down" cut → cumulative sums from left to right
+    sig_down = np.cumsum(signal_counts)
+    bkg_down = np.cumsum(bkg_counts)
+
+    # Compute significance arrays
+    significance_up = []
+    significance_down = []
+
+    for n_s, n_b in zip(sig_up, bkg_up):
         if n_b + n_s > 0:
             S = calculation_functions.calculateSignificance(numSig=n_s, numBkg=n_b)
-            significance.append(S)
+            significance_up.append(S)
         else:
-            significance.append(0)  # If both are zero, significance is zero.
+            significance_up.append(0)
 
-    return np.array(significance)
+    for n_s, n_b in zip(sig_down, bkg_down):
+        if n_b + n_s > 0:
+            S = calculation_functions.calculateSignificance(numSig=n_s, numBkg=n_b)
+            significance_down.append(S)
+        else:
+            significance_down.append(0)
+
+    return np.array(significance_up), np.array(significance_down)
+
 
 
 def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None):
     # Calculate significance bin by bin
-    significance = GetSignificances(signal_hist, bkg_hist)
+    significance = GetCulmulativeSignificances(signal_hist, bkg_hist)
 
     # Get bin edges
     bin_edges = signal_hist.axes[0].edges

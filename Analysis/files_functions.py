@@ -234,7 +234,7 @@ def applyMultipleCuts(df, mask_functions):
 
 
 
-def GetSignificances(sighist,bkghist):
+def GetCulmulativeSignificances(sighist,bkghist):
     '''Calculate and return an array of significances from a given
         signal data histogram, and background data histogram.
     '''
@@ -250,3 +250,5 @@ def GetSignificances(sighist,bkghist):
             significance.append(0)  # If both are zero, significance is zero.
 
     return np.array(significance)
+
+
