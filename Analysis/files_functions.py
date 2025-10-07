@@ -20,9 +20,9 @@ import calculation_functions
 
 ## Variables
 #  Variables for current analysis context
-from setup_variables import luminescence,tree_name, binning,  signal_files, signal_dir, current_dir, background_dir, background_folders
+from setup_variables import luminescence, binning, signal_dir, current_dir, background_dir, background_folders
 
-
+signal_files = None
 
 #############################  FUNCTIONS  ##########################################3
 
@@ -43,12 +43,16 @@ def openTree(tree_filepath):
     - Jet.Eta
     - Jet.Mass
     ''' 
+
+    tree_name= "Delphes"  #all of them are named delphes
+
     try:
         file = uproot.open(tree_filepath)
         tree = file[tree_name]
     except Exception as e:
         print("Error opening root file: " + tree_filepath)
         return None
+
 
     #What we want to keep
     branches_wanted = [
@@ -66,12 +70,14 @@ def openTree(tree_filepath):
 
 
 # Get Weights from every file in given folder"
-def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files,luminescence=luminescence):
+def get_signal_weights(directory, file_effectivearea_dir,luminescence):
     '''
     Get weights from every root file at directory
     For each file, the weight is calculated using luminescence and the corresponding effective area defined
     in the dictionary 'file_effectivearea_dir
     '''
+
+    print("Directory: ", directory)
 
     signal_weight_list = []
 
@@ -82,7 +88,7 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
             file_path = os.path.join(directory, signal_file)
 
             # Check if the root file is in the signal_files dictionary
-            if signal_file in signal_files:
+            if signal_file in file_effectivearea_dir:
                 signal_df = openTree(file_path)
                 if signal_df is None:
                     print("Ignoring root file: " + file_path)
@@ -91,6 +97,9 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
                 signal_temp = signal_df["MissingET.MET"].values
 
                 numSigEvents = len(signal_temp)
+                print("Files in directory:", os.listdir(directory))
+                print("file effective area", file_effectivearea_dir)
+                print("Effective area for file:", file_effectivearea_dir[signal_file])
                 tempSigWeight = calculation_functions.calculateWeight(num_events=numSigEvents,effective_area= file_effectivearea_dir[signal_file],lumi=luminescence)
                 signal_weight_list.append(tempSigWeight)
     
@@ -98,7 +107,7 @@ def get_signal_weights(directory=signal_dir, file_effectivearea_dir=signal_files
     return signal_weight_list
     
 # Get Weights from every file in given folders
-def get_background_weights(directory=background_dir, folder_effectivearea_dir=background_folders,luminescence=luminescence):
+def get_background_weights(directory, folder_effectivearea_dir,luminescence):
     '''
     Get weights from every root file, in every background folder in "folder_effective_area", inside of directory
     For each file, the weight is calculated using luminescence and the corresponding effective area defined
@@ -138,37 +147,38 @@ def get_background_weights(directory=background_dir, folder_effectivearea_dir=ba
 
 
 
-def getJetsData(dataname, masklist,signal_directory=signal_dir,background_directory=background_dir,background_folders=background_folders): 
+def getJetsData(dataname, masklist,signal_directory,signal_files,background_directory,background_folders): 
     #used when we are working with J0,J1 stuff (which is often)
 
     #Signal Processing
     signal_j0_list = []
     signal_j1_list = []
 
-    for signal_file in sorted(os.listdir(signal_directory)):
-        if signal_file.endswith(".root"):
-            file_path = os.path.join(signal_directory, signal_file)
-            
-            # Check if the root file is in the signal_files dictionary
-            if signal_file in signal_files:
-                signal_df = openTree(file_path)
-                if signal_df is None:
-                    print("Ignoring root file: " + file_path)
-                    continue
+    if signal_files or signal_directory is None:
+        for signal_file in sorted(os.listdir(signal_directory)):
+            if signal_file.endswith(".root"):
+                file_path = os.path.join(signal_directory, signal_file)
+                
+                # Check if the root file is in the signal_files dictionary
+                if signal_file in signal_files:
+                    signal_df = openTree(file_path)
+                    if signal_df is None:
+                        print("Ignoring root file: " + file_path)
+                        continue
 
-                if(masklist is not None):
-                    signal_df = applyMultipleCuts(signal_df,masklist)
+                    if(masklist is not None):
+                        signal_df = applyMultipleCuts(signal_df,masklist)
 
-                 # Extract and filter jet data
-                signal_jets = signal_df["Jet." + dataname].values
-                signal_filtered_jets = [entry for entry in signal_jets if len(entry) >= 2]  # At least two entries (j0,j1)
+                    # Extract and filter jet data
+                    signal_jets = signal_df["Jet." + dataname].values
+                    signal_filtered_jets = [entry for entry in signal_jets if len(entry) >= 2]  # At least two entries (j0,j1)
 
-                # Extract J0 and J1
-                signal_j0 = np.array([entry[0] for entry in signal_filtered_jets])
-                signal_j1 = np.array([entry[1] for entry in signal_filtered_jets])
+                    # Extract J0 and J1
+                    signal_j0 = np.array([entry[0] for entry in signal_filtered_jets])
+                    signal_j1 = np.array([entry[1] for entry in signal_filtered_jets])
 
-                signal_j0_list.append(signal_j0)
-                signal_j1_list.append(signal_j1)
+                    signal_j0_list.append(signal_j0)
+                    signal_j1_list.append(signal_j1)
 
     
 
@@ -176,40 +186,39 @@ def getJetsData(dataname, masklist,signal_directory=signal_dir,background_direct
     background_Z_lists = [[],[]] #first entry is j0, second entry is j1
     background_W_lists = [[],[]]
 
+    if background_directory or background_folders is not None:
+        for folder_name in sorted(os.listdir(background_directory)):
+            folder_path = os.path.join(background_directory, folder_name)
 
-    for folder_name in sorted(os.listdir(background_directory)):
-        folder_path = os.path.join(background_directory, folder_name)
+            # Check if the current item is a directory and if its name is in the background_folders dictionary
+            if os.path.isdir(folder_path) and folder_name in background_folders:
 
-        # Check if the current item is a directory and if its name is in the background_folders dictionary
-        if os.path.isdir(folder_path) and folder_name in background_folders:
+                for root_file in sorted(os.listdir(folder_path)):
+                    if root_file.endswith(".root"):
+                        file_path = os.path.join(folder_path, root_file)
+                        background_df = openTree(file_path)  
+                        if background_df is None:
+                            print("Ignoring root file: " + file_path)
+                            continue
 
-            for root_file in sorted(os.listdir(folder_path)):
-                if root_file.endswith(".root"):
-                    file_path = os.path.join(folder_path, root_file)
-                    background_df = openTree(file_path)  
-                    if background_df is None:
-                        print("Ignoring root file: " + file_path)
-                        continue
+                        if(masklist is not None):
+                            background_df = applyMultipleCuts(background_df, masklist)
 
-                    if(masklist is not None):
-                        background_df = applyMultipleCuts(background_df, masklist)
+                        # Extract and filter jet data
+                        background_jets = background_df["Jet." + dataname].values
+                        background_filtered_jets = [entry for entry in background_jets if len(entry) >= 2]  # At least two entries
 
-                    # Extract and filter jet data
-                    background_jets = background_df["Jet." + dataname].values
-                    background_filtered_jets = [entry for entry in background_jets if len(entry) >= 2]  # At least two entries
+                        # Extract J0 and J1
+                        background_j0 = np.array([entry[0] for entry in background_filtered_jets])
+                        background_j1 = np.array([entry[1] for entry in background_filtered_jets])
 
-                    # Extract J0 and J1
-                    background_j0 = np.array([entry[0] for entry in background_filtered_jets])
-                    background_j1 = np.array([entry[1] for entry in background_filtered_jets])
-
-                    if folder_name.startswith("Z"):
-                        background_Z_lists[0].append(background_j0)
-                        background_Z_lists[1].append(background_j1)
-                    elif folder_name.startswith("W"):
-                        background_W_lists[0].append(background_j0)
-                        background_W_lists[1].append(background_j1)
+                        if folder_name.startswith("Z"):
+                            background_Z_lists[0].append(background_j0)
+                            background_Z_lists[1].append(background_j1)
+                        elif folder_name.startswith("W"):
+                            background_W_lists[0].append(background_j0)
+                            background_W_lists[1].append(background_j1)
                   
-                    
 
     return signal_j0_list, signal_j1_list, background_W_lists, background_Z_lists
 

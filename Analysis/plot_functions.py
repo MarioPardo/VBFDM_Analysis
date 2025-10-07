@@ -16,14 +16,14 @@ import os
 import calculation_functions
 import files_functions 
 
-
+signal_dir,signal_files,background_dir,background_folders = None, None,None,None
 
 # Variables
 # Variables for current analysis context 
-from setup_variables import binning,  current_dir , signal_dir, signal_files ,background_dir, background_folders
+from setup_variables import binning
 
 # Plot the "dataname" graph for J0, J1
-def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename):
+def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
         Extraction of data is handled by getJetsData 
@@ -50,7 +50,8 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         axis.Regular(binning[binname]["bins"], *binning[binname]["range"], name="thedata", label=dataname+"J1")
     )
 
-    j0siglist, j1siglist, bkgWlist, bkgZlist,  = files_functions.getJetsData(dataname,masklist)
+
+    j0siglist, j1siglist, bkgWlist, bkgZlist,  = files_functions.getJetsData(dataname,masklist,signal_directory,signal_files,background_directory,background_folders)
 
     # Fill Signal
     for i in range(len(j0siglist)):
@@ -58,20 +59,22 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
         j1_hist_signal.fill(thedata=j1siglist[i], weight=signal_weight_list[i])
 
     # Fill Background
-    bkgW_weights = background_weight_list[0]
-    bkgZ_weights = background_weight_list[1]
+    if background_weight_list is not None or len(background_weight_list)==2:
+        bkgW_weights = background_weight_list[0]
+        bkgZ_weights = background_weight_list[1]
 
-    for i in range(len(bkgW_weights)): 
-        j0_hist_background.fill(thedata=bkgWlist[0][i], weight=bkgW_weights[i])
-        j1_hist_background.fill(thedata=bkgWlist[1][i], weight=bkgW_weights[i])
+    if bkgW_weights is not None:
+        for i in range(len(bkgW_weights)):
+            j0_hist_background.fill(thedata=bkgWlist[0][i], weight=bkgW_weights[i])
+            j1_hist_background.fill(thedata=bkgWlist[1][i], weight=bkgW_weights[i])
 
     #J1
-    for i in range(len(bkgZ_weights)): 
-        j0_hist_background.fill(thedata=bkgZlist[0][i], weight=bkgZ_weights[i])
-        j1_hist_background.fill(thedata=bkgZlist[1][i], weight=bkgZ_weights[i])
+    if bkgZ_weights is not None:
+        for i in range(len(bkgZ_weights)): 
+            j0_hist_background.fill(thedata=bkgZlist[0][i], weight=bkgZ_weights[i])
+            j1_hist_background.fill(thedata=bkgZlist[1][i], weight=bkgZ_weights[i])
 
-    
-    
+
     # Create a figure and a set of subplots (2 columns, 1 row)More actions
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -122,11 +125,6 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
     # Adjust layout
     plt.tight_layout()
     
-    if masklist==None:
-        number_of_cuts=0
-    else:
-        number_of_cuts=str(len(masklist))
-    
     # Show the plot
     if savefilename is not None:
         plt.savefig(savefilename+".png")
@@ -140,7 +138,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
 #TODO adapt to new handling of background (W,Z)
 # Plots a certain graph for a certain jet, J0 or J1
-def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename): 
+def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename,signal_directory,signal_files,background_directory,background_folders): 
     '''
     Plots a certain graph for J0, J1, depending on "kind", being either "j1" or "j0"
 
@@ -164,7 +162,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
     )
 
     # Retrieve data
-    j0siglist, j1siglist, bkgj0list, bkgj1list = files_functions.getJetsData(dataname, masklist)
+    j0siglist, j1siglist, bkgj0list, bkgj1list = files_functions.getJetsData(dataname, masklist,signal_directory,signal_files,background_directory,background_folders)
 
     # Fill histograms
     for i in range(len(j0siglist)):
@@ -240,7 +238,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
 
 
 # Plot Missing Energy
-def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
+def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory, background_folders):
     
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
@@ -288,42 +286,46 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 
 
     #Background Data
-    bkgWeightsW  = background_weight_list[0]
-    bkgWeightsZ  = background_weight_list[1]
+    bkgWeightsW  = []
+    bkgWeightsZ  = []
     currBkgWeightList = None
+    if background_directory and background_folders is not None:
+        bkgWeightsW  = background_weight_list[0]
+        bkgWeightsZ  = background_weight_list[1]
+        currBkgWeightList = None
 
+    
+        for folder_name in sorted(os.listdir(background_directory)):
+            folder_path = os.path.join(background_directory, folder_name)
+                
+            # Check if the current item is a directory and if its name is in the background_folders dictionary
+            if os.path.isdir(folder_path) and folder_name in background_folders:
 
-    for folder_name in sorted(os.listdir(background_directory)):
-        folder_path = os.path.join(background_directory, folder_name)
-            
-        # Check if the current item is a directory and if its name is in the background_folders dictionary
-        if os.path.isdir(folder_path) and folder_name in background_folders:
+                bkgWeightIndex = 0
+                for root_file in sorted(os.listdir(folder_path)):
+                    if root_file.endswith(".root"):
+                        file_path = os.path.join(folder_path, root_file)
+                        background_df = files_functions.openTree(file_path)
+                        if background_df is None:
+                            print("Ignoring root file: " + file_path)
+                            continue
 
-            bkgWeightIndex = 0
-            for root_file in sorted(os.listdir(folder_path)):
-                if root_file.endswith(".root"):
-                    file_path = os.path.join(folder_path, root_file)
-                    background_df = files_functions.openTree(file_path)
-                    if background_df is None:
-                        print("Ignoring root file: " + file_path)
-                        continue
+                        if(masklist is not None):
+                            background_df = files_functions.applyMultipleCuts(background_df, masklist)
 
-                    if(masklist is not None):
-                        background_df = files_functions.applyMultipleCuts(background_df, masklist)
-
-                    background_met = background_df["MissingET.MET"].values
-                    background_met = ak.flatten(background_met).to_numpy()
-                   
-                    if folder_name.startswith("W"):
-                        currBkgWeightList = bkgWeightsW
-                        w_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
-                    elif folder_name.startswith("Z"):
-                        currBkgWeightList = bkgWeightsZ
-                        z_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                        background_met = background_df["MissingET.MET"].values
+                        background_met = ak.flatten(background_met).to_numpy()
                     
+                        if folder_name.startswith("W"):
+                            currBkgWeightList = bkgWeightsW
+                            w_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                        elif folder_name.startswith("Z"):
+                            currBkgWeightList = bkgWeightsZ
+                            z_background_hist.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                        
 
-                    met_hist_background.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
-                    bkgWeightIndex+=1
+                        met_hist_background.fill(MET=background_met,weight =currBkgWeightList[bkgWeightIndex])
+                        bkgWeightIndex+=1
                 
                     
 
@@ -371,7 +373,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 ##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
 
 # Plot Phi(Met)
-def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory=signal_dir,signal_files=signal_files, background_directory = background_dir, background_folders=background_folders):
+def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory , background_folders):
 
 
     met_phi_hist_background = Hist(
@@ -411,41 +413,46 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
                 sigWeightIndex += 1
 
     #Background
-    bkgWeightsW  = background_weight_list[0]
-    bkgWeightsZ  = background_weight_list[1]
+    bkgWeightsW  = []
+    bkgWeightsZ  = []
     currBkgWeightList = None
+    if background_directory and background_folders is not None:
+        bkgWeightsW  = background_weight_list[0]
+        bkgWeightsZ  = background_weight_list[1]
+        currBkgWeightList = None
+        
 
 
-  
-    for folder_name in sorted(os.listdir(background_directory)):
-        folder_path = os.path.join(background_directory, folder_name)
-            
-        # Check if the current item is a directory and if its name is in the background_folders dictionary
-        if os.path.isdir(folder_path) and folder_name in background_folders:
-            
-            bkgWeightIndex = 0
-            for root_file in sorted(os.listdir(folder_path)):
-                if root_file.endswith(".root"):
-                    file_path = os.path.join(folder_path, root_file)
-                    background_df = files_functions.openTree(file_path)
-                    if background_df is None:
-                        print("Ignoring root file: " + file_path)
-                        continue
+    
+        for folder_name in sorted(os.listdir(background_directory)):
+            folder_path = os.path.join(background_directory, folder_name)
+                
+            # Check if the current item is a directory and if its name is in the background_folders dictionary
+            if os.path.isdir(folder_path) and folder_name in background_folders:
+                
+                bkgWeightIndex = 0
+                for root_file in sorted(os.listdir(folder_path)):
+                    if root_file.endswith(".root"):
+                        file_path = os.path.join(folder_path, root_file)
+                        background_df = files_functions.openTree(file_path)
+                        if background_df is None:
+                            print("Ignoring root file: " + file_path)
+                            continue
 
-                    if(masklist is not None):
-                        background_df = files_functions.applyMultipleCuts(background_df, masklist)
+                        if(masklist is not None):
+                            background_df = files_functions.applyMultipleCuts(background_df, masklist)
 
-                    background_met_phi = background_df["MissingET.Phi"].values
-                    background_met_phi = ak.flatten(background_met_phi).to_numpy()
-                    if folder_name.startswith("W"):
-                        currBkgWeightList = bkgWeightsW
-                        w_background_hist.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
-                    elif folder_name.startswith("Z"):
-                        currBkgWeightList = bkgWeightsZ
-                        z_background_hist.fill(MET_Phi=background_met_phi,weight=currBkgWeightList[bkgWeightIndex])
-                    
-                    met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
-                    bkgWeightIndex += 1
+                        background_met_phi = background_df["MissingET.Phi"].values
+                        background_met_phi = ak.flatten(background_met_phi).to_numpy()
+                        if folder_name.startswith("W"):
+                            currBkgWeightList = bkgWeightsW
+                            w_background_hist.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
+                        elif folder_name.startswith("Z"):
+                            currBkgWeightList = bkgWeightsZ
+                            z_background_hist.fill(MET_Phi=background_met_phi,weight=currBkgWeightList[bkgWeightIndex])
+                        
+                        met_phi_hist_background.fill(MET_Phi=background_met_phi,weight =currBkgWeightList[bkgWeightIndex])
+                        bkgWeightIndex += 1
                     
 
     #Set up histogram
@@ -495,7 +502,7 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
 
 
 # Plot EtaJ0 * EtaJ1
-def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
+def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
     '''
 
 
@@ -511,34 +518,38 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
         axis.Regular(binning["Eta*Eta"]["bins"], *binning["Eta*Eta"]["range"], name="Eta*Eta", label="Eta*Eta")
     )
 
-    j0siglist, j1siglist, bkgWlist, bkgZlist, = files_functions.getJetsData("Eta",masklist)
+    j0siglist, j1siglist, bkgWlist, bkgZlist, = files_functions.getJetsData("Eta",masklist,signal_directory,signal_files,background_directory,background_folders)
 
     # Fill Signal
     for i in range(len(j0siglist)):
         etaeta_hist_signal.fill(j0siglist[i]*j1siglist[i], weight=signal_weight_list[i])
 
     # Fill Background
-    bkgW_weights = background_weight_list[0]
-    bkgZ_weights = background_weight_list[1]
+    bkgW_weights = []
+    bkgZ_weights = []
+    if background_directory or background_folders is not None:
 
-    for i in range(len(bkgW_weights)): 
-        etaeta_hist_background.fill(bkgWlist[0][i] * bkgWlist[1][i], weight=bkgW_weights[i])
+        bkgW_weights = background_weight_list[0]
+        bkgZ_weights = background_weight_list[1]
 
-    for i in range(len(bkgZ_weights)): 
-        etaeta_hist_background.fill(bkgZlist[0][i] * bkgZlist[1][i], weight=bkgZ_weights[i])
+        for i in range(len(bkgW_weights)): 
+            etaeta_hist_background.fill(bkgWlist[0][i] * bkgWlist[1][i], weight=bkgW_weights[i])
+
+        for i in range(len(bkgZ_weights)): 
+            etaeta_hist_background.fill(bkgZlist[0][i] * bkgZlist[1][i], weight=bkgZ_weights[i])
 
 
-    #Set up histogram
-    plt.figure(figsize=(10, 6))
+        #Set up histogram
+        plt.figure(figsize=(10, 6))
 
-    # Background histogram
-    plt.stairs(
-        etaeta_hist_background.values(),
-        etaeta_hist_background.axes[0].edges,
-        color='blue',
-        label='Background',
-        linewidth=2
-    )
+        # Background histogram
+        plt.stairs(
+            etaeta_hist_background.values(),
+            etaeta_hist_background.axes[0].edges,
+            color='blue',
+            label='Background',
+            linewidth=2
+        )
 
     # Signal histogram
     plt.stairs(
@@ -570,7 +581,7 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename):
 
 
 
-def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename):
+def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
 
     deltaeta_hist_background = Hist(
         axis.Regular(binning["Delta_Eta"]["bins"], *binning["Delta_Eta"]["range"], name="DeltaEta", label="DeltaEta")
@@ -581,21 +592,24 @@ def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefile
     )
 
 
-    j0siglist, j1siglist, bkgWlist, bkgZlist = files_functions.getJetsData("Eta",masklist)
+    j0siglist, j1siglist, bkgWlist, bkgZlist = files_functions.getJetsData("Eta",masklist,signal_directory,signal_files,background_directory,background_folders)
 
     # Fill signal
     for i in range(len(j0siglist)):
         deltaeta_hist_signal.fill(np.abs(j0siglist[i]-j1siglist[i]), weight=signal_weight_list[i])
 
      # Fill Background
-    bkgW_weights = background_weight_list[0]
-    bkgZ_weights = background_weight_list[1]
+    bkgW_weights = []
+    bkgZ_weights = []
+    if background_directory or background_folders is not None:
+        bkgW_weights = background_weight_list[0]
+        bkgZ_weights = background_weight_list[1]
 
-    for i in range(len(bkgW_weights)): 
-        deltaeta_hist_background.fill(np.abs(bkgWlist[0][i] - bkgWlist[1][i]), weight=bkgW_weights[i])
+        for i in range(len(bkgW_weights)): 
+            deltaeta_hist_background.fill(np.abs(bkgWlist[0][i] - bkgWlist[1][i]), weight=bkgW_weights[i])
 
-    for i in range(len(bkgZ_weights)): 
-        deltaeta_hist_background.fill(np.abs(bkgZlist[0][i] - bkgZlist[1][i]), weight=bkgZ_weights[i])
+        for i in range(len(bkgZ_weights)): 
+            deltaeta_hist_background.fill(np.abs(bkgZlist[0][i] - bkgZlist[1][i]), weight=bkgZ_weights[i])
 
 
     #Set up histogram
@@ -634,7 +648,7 @@ def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefile
     #returns hist itself, for use in the Significance function
     return deltaeta_hist_signal, deltaeta_hist_background
 
-def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename):
+def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
 
     print("Plotting Invariant Mass")
 
@@ -656,14 +670,17 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     )
 
     #Data needed: pt0, eta0, phi0, m0, pt1, eta1, phi1, m1
-    background_weights_W = background_weight_list[0]
-    background_weights_Z = background_weight_list[1]
+    background_weights_W = []
+    background_weights_Z = []
+    if background_directory or background_folders is not None:
+        background_weights_W = background_weight_list[0]
+        background_weights_Z = background_weight_list[1]
 
 
-    ptj0siglist, ptj1siglist, ptbkgWlists, ptbkgZlists = files_functions.getJetsData("PT",masklist)
-    etaj0siglist, etaj1siglist, etabkgWlists, etabkgZlists = files_functions.getJetsData("Eta",masklist)
-    phij0siglist, phij1siglist, phibkgWlists, phibkgZlists = files_functions.getJetsData("Phi",masklist)
-    massj0siglist, massj1siglist, massbkgWlists, massbkgZlists = files_functions.getJetsData("Mass",masklist)
+    ptj0siglist, ptj1siglist, ptbkgWlists, ptbkgZlists = files_functions.getJetsData("PT",masklist,signal_directory,signal_files,background_directory,background_folders)
+    etaj0siglist, etaj1siglist, etabkgWlists, etabkgZlists = files_functions.getJetsData("Eta",masklist,signal_directory,signal_files,background_directory,background_folders)
+    phij0siglist, phij1siglist, phibkgWlists, phibkgZlists = files_functions.getJetsData("Phi",masklist,signal_directory,signal_files,background_directory,background_folders)
+    massj0siglist, massj1siglist, massbkgWlists, massbkgZlists = files_functions.getJetsData("Mass",masklist,signal_directory,signal_files,background_directory,background_folders)
 
     for i in range(len(ptj0siglist)):
         
