@@ -18,9 +18,6 @@ from hist import Hist, axis
 #Our library files
 import calculation_functions
 
-## Variables
-#  Variables for current analysis context
-from setup_variables import luminescence, binning, signal_dir, current_dir, background_dir, background_folders
 
 signal_files = None
 

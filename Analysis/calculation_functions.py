@@ -35,3 +35,25 @@ def calc_invariant_mass(pt0, eta0, phi0, m0, pt1, eta1, phi1, m1):
     m2 = e_total**2 - (px_total**2 + py_total**2 + pz_total**2)
     m2 = np.maximum(m2, 0)  # This will replace negative values with 0
     return np.sqrt(m2)
+
+def calc_invariant_mass_lorentz_vectors(v1_pt, v1_eta, v1_phi, v1_mass, v2_pt, v2_eta, v2_phi, v2_mass):
+    # Create Lorentz vectors for both particles
+    v1 = ak.zip({
+        "pt": v1_pt,
+        "eta": v1_eta,
+        "phi": v1_phi,
+        "mass": v1_mass
+    }, with_name="LorentzVector")
+
+    v2 = ak.zip({
+        "pt": v2_pt,
+        "eta": v2_eta,
+        "phi": v2_phi,
+        "mass": v2_mass
+    }, with_name="LorentzVector")
+
+    # Sum the Lorentz vectors
+    v_total = v1 + v2
+
+    # Return the invariant mass
+    return v_total.mass

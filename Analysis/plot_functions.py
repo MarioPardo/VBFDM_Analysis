@@ -18,12 +18,9 @@ import files_functions
 
 signal_dir,signal_files,background_dir,background_folders = None, None,None,None
 
-# Variables
-# Variables for current analysis context 
-from setup_variables import binning
 
 # Plot the "dataname" graph for J0, J1
-def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
+def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
         Extraction of data is handled by getJetsData 
@@ -138,7 +135,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
 #TODO adapt to new handling of background (W,Z)
 # Plots a certain graph for a certain jet, J0 or J1
-def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename,signal_directory,signal_files,background_directory,background_folders): 
+def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename,signal_directory,signal_files,background_directory,background_folders,binning): 
     '''
     Plots a certain graph for J0, J1, depending on "kind", being either "j1" or "j0"
 
@@ -238,7 +235,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
 
 
 # Plot Missing Energy
-def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory, background_folders):
+def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory, background_folders,binning):
     
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
@@ -373,7 +370,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 ##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
 
 # Plot Phi(Met)
-def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory , background_folders):
+def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory , background_folders,binning):
 
 
     met_phi_hist_background = Hist(
@@ -502,7 +499,7 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
 
 
 # Plot EtaJ0 * EtaJ1
-def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
+def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
     '''
 
 
@@ -581,7 +578,7 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,s
 
 
 
-def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
+def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
 
     deltaeta_hist_background = Hist(
         axis.Regular(binning["Delta_Eta"]["bins"], *binning["Delta_Eta"]["range"], name="DeltaEta", label="DeltaEta")
@@ -648,7 +645,7 @@ def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefile
     #returns hist itself, for use in the Significance function
     return deltaeta_hist_signal, deltaeta_hist_background
 
-def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders):
+def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
 
     print("Plotting Invariant Mass")
 
@@ -692,13 +689,13 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     for i in range(len(background_weights_W)):
         #W Boson
         invariant_hist_background.fill(
-            calculation_functions.calc_invariant_mass(
+            calculation_functions.calc_invariant_mass_lorentz_vectors(
                     pt0=ptbkgWlists[0][i], eta0=etabkgWlists[0][i], phi0 = phibkgWlists[0][i],m0=massbkgWlists[0][i],
                     pt1=ptbkgWlists[1][i], eta1=etabkgWlists[1][i], phi1 = phibkgWlists[1][i],m1=massbkgWlists[1][i]),
                     weight = background_weights_W[i])
         
         bkg_W_hist.fill(
-            calculation_functions.calc_invariant_mass(
+            calculation_functions.calc_invariant_mass_lorentz_vectors(
                     pt0=ptbkgWlists[0][i], eta0=etabkgWlists[0][i], phi0 = phibkgWlists[0][i],m0=massbkgWlists[0][i],
                     pt1=ptbkgWlists[1][i], eta1=etabkgWlists[1][i], phi1 = phibkgWlists[1][i],m1=massbkgWlists[1][i]),
                     weight = background_weights_W[i])
@@ -706,13 +703,13 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     for i in range(len(background_weights_Z)):
         #Z Boson
         invariant_hist_background.fill(
-            calculation_functions.calc_invariant_mass(
+            calculation_functions.calc_invariant_mass_lorentz_vectors(
                     pt0=ptbkgZlists[0][i], eta0=etabkgZlists[0][i], phi0 = phibkgZlists[0][i],m0=massbkgZlists[0][i],
                     pt1=ptbkgZlists[1][i], eta1=etabkgZlists[1][i], phi1 = phibkgZlists[1][i],m1=massbkgZlists[1][i]),
                     weight = background_weights_Z[i])
         
         bkg_Z_hist.fill(
-            calculation_functions.calc_invariant_mass(
+            calculation_functions.calc_invariant_mass_lorentz_vectors(
                     pt0=ptbkgZlists[0][i], eta0=etabkgZlists[0][i], phi0 = phibkgZlists[0][i],m0=massbkgZlists[0][i],
                     pt1=ptbkgZlists[1][i], eta1=etabkgZlists[1][i], phi1 = phibkgZlists[1][i],m1=massbkgZlists[1][i]),
                     weight = background_weights_Z[i])
@@ -770,7 +767,7 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
 def significance_plot(lims,signal_hist,background_hist,kind):
 
     if kind=="eta*eta":
-        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCumulativeSignificances(signal_hist, background_hist)
 
         # Get bin edges from the histogram
         bin_edges = signal_hist.axes[0].edges
@@ -792,7 +789,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.savefig("Significance_plot_eta*eta.png")
 
     elif kind=="Delta(eta)":
-        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCumulativeSignificances(signal_hist, background_hist)
 
         bin_edges = signal_hist.axes[0].edges
 
@@ -812,7 +809,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.savefig("Significance_plot_Delta(eta).png")
 
     elif kind=="j0":
-        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCumulativeSignificances(signal_hist, background_hist)
 
         bin_edges = signal_hist.axes[0].edges
 
@@ -831,7 +828,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.savefig("Significance_Plot_PT(j0).png")
 
     elif kind=="j1":
-        significance_up, significance_down = GetCulmulativeSignificances(signal_hist, background_hist)
+        significance_up, significance_down = GetCumulativeSignificances(signal_hist, background_hist)
 
         bin_edges = signal_hist.axes[0].edges
 
@@ -850,7 +847,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.savefig("Significance_Plot_PT(j1).png")
 
     elif kind == "Invariant":
-        significance_up, significance_down =GetCulmulativeSignificances(signal_hist, background_hist)
+        significance_up, significance_down =GetCumulativeSignificances(signal_hist, background_hist)
 
         bin_edges = signal_hist.axes[0].edges
 
@@ -931,7 +928,7 @@ def Get_Table(number_of_sig_events, number_of_bkg_events, numWBkgEvents, numZBkg
 
 
 
-def GetCulmulativeSignificances(sighist, bkghist):
+def GetCumulativeSignificances(sighist, bkghist):
     """
     Calculate and return two arrays of significances:
     1. Cumulative cuts "up"   (x >= bin_edge)
@@ -972,7 +969,7 @@ def GetCulmulativeSignificances(sighist, bkghist):
 
 def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None):
     # Calculate significance bin by bin
-    significance = GetCulmulativeSignificances(signal_hist, bkg_hist)
+    significance = GetCumulativeSignificances(signal_hist, bkg_hist)
 
     # Get bin edges
     bin_edges = signal_hist.axes[0].edges
