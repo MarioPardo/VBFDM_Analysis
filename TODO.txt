@@ -1,0 +1,18 @@
+
+CALCULACIONES
+[x] Masa invariante con vectorez lorentz
+
+ORGANIZACION
+[] Mejores nombres para archivos de analysis, que sean mas descriptivos
+[] Descripcion.txt en cada carpeta de analysis
+
+[] Actualizar Analysis viejos con las nuevas estructuras de las funciones en plot_functions
+    [] Analysis1
+    [] Analysis2
+    [] Analysis1_OptimizeSignificance
+
+[] Actualizar nombres de PNGs
+    -- No hacer manualmente, pero actualizar el argumento que se pasa a la funcion de plottear
+        que crea el PNG
+
+[] Actualizar methodos de plot_functions para que guarde PNGs en carpeta "PNGs" automaticamente
