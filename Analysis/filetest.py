@@ -29,4 +29,4 @@ def check_root_files(directory):
         print("All files passed.")
 
 # Example usage
-check_root_files("/MC_Samples/Znunu_jets/")
+check_root_files("/MC_Samples/SimplifiedModelsSignals/")
