@@ -20,7 +20,7 @@ signal_dir,signal_files,background_dir,background_folders = None, None,None,None
 
 
 # Plot the "dataname" graph for J0, J1
-def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
+def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning,plot_scale="log"):
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
         Extraction of data is handled by getJetsData 
@@ -92,7 +92,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
     )
     axs[0].set_xlabel(dataname+'(j0)')
     axs[0].set_ylabel('Counts')
-    axs[0].set_yscale('log')
+    axs[0].set_yscale(plot_scale)
     axs[0].set_title(dataname+'(j0) Distributions')
     axs[0].legend()
     axs[0].grid(True)
@@ -114,7 +114,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
     )
     axs[1].set_xlabel(dataname+'(j1)')
     axs[1].set_ylabel('Counts')
-    axs[1].set_yscale('log')
+    axs[1].set_yscale(plot_scale)
     axs[1].set_title(dataname+'(j1) Distributions')
     axs[1].legend()
     axs[1].grid(True)
@@ -135,7 +135,7 @@ def PlotJets(binname,dataname,masklist,signal_weight_list,background_weight_list
 
 #TODO adapt to new handling of background (W,Z)
 # Plots a certain graph for a certain jet, J0 or J1
-def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename,signal_directory,signal_files,background_directory,background_folders,binning): 
+def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, masklist, kind,savefilename,signal_directory,signal_files,background_directory,background_folders,binning,plot_scale="log"): 
     '''
     Plots a certain graph for J0, J1, depending on "kind", being either "j1" or "j0"
 
@@ -191,7 +191,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
         )
         axs.set_xlabel(dataname+'(j1)')
         axs.set_ylabel('Counts')
-        axs.set_yscale('log')
+        axs.set_yscale(plot_scale)
         axs.set_title(dataname+'(j1) Distributions')
         axs.legend()
         axs.grid(True)
@@ -215,7 +215,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
         )
         axs.set_xlabel(dataname+'(j0)')
         axs.set_ylabel('Counts')
-        axs.set_yscale('log')
+        axs.set_yscale(plot_scale)
         axs.set_title(dataname+'(j0) Distributions')
         axs.legend()
         axs.grid(True)
@@ -235,7 +235,7 @@ def PlotSingleJet(binname, dataname,signal_weight_list,background_weight_list, m
 
 
 # Plot Missing Energy
-def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory, background_folders,binning):
+def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory, background_folders,binning,plot_scale="log"):
     
     '''Plot graph for Jets J0,J1 for a given dataname, susing signal weights and background weights given
 
@@ -350,7 +350,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
     # Add labels and legend
     plt.xlabel('MET')
     plt.ylabel('Counts')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title('MET Distribution')
     plt.legend()
     plt.grid(True)
@@ -370,7 +370,7 @@ def PlotMET(masklist, signal_weight_list,background_weight_list,savefilename,sig
 ##TODO These two (PlotMET, PlotPhiMet) can likely be refactored into a single function
 
 # Plot Phi(Met)
-def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory , background_folders,binning):
+def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files, background_directory , background_folders,binning,plot_scale="log"):
 
 
     met_phi_hist_background = Hist(
@@ -476,7 +476,7 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
     # Add labels and legend
     plt.xlabel('MET Phi (rad)')
     plt.ylabel('Counts')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title('MET Phi Distribution')
     plt.legend()
     plt.grid(True)
@@ -499,7 +499,7 @@ def PlotPhiMet(masklist, signal_weight_list,background_weight_list,savefilename,
 
 
 # Plot EtaJ0 * EtaJ1
-def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
+def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning,plot_scale="log"):
     '''
 
 
@@ -560,7 +560,7 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,s
     # Add labels and legend
     plt.xlabel('Eta(j0) * Eta(j1)')
     plt.ylabel('Counts')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title('Eta * Eta Distribution')
     plt.legend()
     plt.grid(True)
@@ -578,7 +578,7 @@ def PlotEtaEta(masklist,signal_weight_list,background_weight_list,savefilename,s
 
 
 
-def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
+def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning,plot_scale="log"):
 
     deltaeta_hist_background = Hist(
         axis.Regular(binning["Delta_Eta"]["bins"], *binning["Delta_Eta"]["range"], name="DeltaEta", label="DeltaEta")
@@ -633,7 +633,7 @@ def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefile
     # Add labels and legend
     plt.xlabel('Abs(Delta Eta) (j0, j1)')
     plt.ylabel('Counts')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title('Delta Eta Distribution')
     plt.legend()
     plt.grid(True)
@@ -645,7 +645,7 @@ def PlotDeltaEtaJets(masklist,signal_weight_list,background_weight_list,savefile
     #returns hist itself, for use in the Significance function
     return deltaeta_hist_signal, deltaeta_hist_background
 
-def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning):
+def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefilename,signal_directory,signal_files,background_directory,background_folders,binning,plot_scale="log"):
 
     print("Plotting Invariant Mass")
 
@@ -740,17 +740,12 @@ def PlotInvariantMass(masklist,signal_weight_list,background_weight_list,savefil
     # Add labels and legend
     plt.xlabel('Invariant Mass j0 j1')
     plt.ylabel('Counts')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title('Invariant Mass Distribution')
     plt.legend()
     plt.grid(True)
 
         
-    if masklist==None:
-        number_of_cuts=0
-    else:
-        number_of_cuts=str(len(masklist))
-
     # Save the plot
     plt.savefig(savefilename+".png")
 
@@ -781,7 +776,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.xlabel('Eta(j0) * Eta(j1)')
         plt.xlim(lims[0], lims[1])  # from visual inspection
         plt.ylabel('Significance')
-        plt.yscale('log')
+        plt.yscale(plot_scale)
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
@@ -801,7 +796,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 0.1))
         plt.xlim(lims[0], lims[1])
         plt.ylabel('Significance')
-        plt.yscale('log')
+        plt.yscale(plot_scale)
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
@@ -820,7 +815,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.xlabel('PT(j0)')
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
         plt.ylabel('Significance')
-        plt.yscale('log')
+        plt.yscale(plot_scale)
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
@@ -839,7 +834,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.xlabel('PT(j1)')
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 20))
         plt.ylabel('Significance')
-        plt.yscale('log')
+        plt.yscale(plot_scale)
         plt.title('Significance Plot')
         plt.grid(True)
         plt.legend()
@@ -858,7 +853,7 @@ def significance_plot(lims,signal_hist,background_hist,kind):
         plt.xlabel('Invariant Mass (j0, j1)')
         plt.xticks(np.arange(bin_edges[0], bin_edges[-1]+1, 50))
         plt.ylabel('Significance')
-        plt.yscale('log')
+        plt.yscale(plot_scale)
         plt.title('Significance Plot: Invariant Mass')
         plt.grid(True)
         plt.legend()
@@ -967,7 +962,7 @@ def GetCumulativeSignificances(sighist, bkghist):
 
 
 
-def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None):
+def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None,plot_scale="log"):
     # Calculate significance bin by bin
     significance = GetCumulativeSignificances(signal_hist, bkg_hist)
 
@@ -984,7 +979,7 @@ def PlotSignificance(signal_hist, bkg_hist, title, xlabel, xlim=None):
     if xlim is not None:
         plt.xlim(xlim)   # expects tuple like (-17, 17)
     plt.ylabel('Significance')
-    plt.yscale('log')
+    plt.yscale(plot_scale)
     plt.title(title)
     plt.grid(True)
     plt.legend()
